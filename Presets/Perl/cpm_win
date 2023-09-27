@@ -1,0 +1,19 @@
+#!/usr/bin/perl
+use strict;
+use warnings;
+use File::Spec;
+use Getopt::Long;
+use Cwd;
+
+# my $core_dir = this;
+
+main();
+
+sub main {
+
+}
+
+
+sub for_windows {
+    
+}
