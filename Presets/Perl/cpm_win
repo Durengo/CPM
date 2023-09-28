@@ -4,16 +4,143 @@ use warnings;
 use File::Spec;
 use Getopt::Long;
 use Cwd;
+use Data::Dumper;
+use File::Basename;
+
+# Disable automatic bundling of single-letter options
+Getopt::Long::Configure( "nobundling", "no_auto_abbrev" );
 
 # my $core_dir = this;
+my $working_dir = getcwd();
 
-main();
+# tn = this_name | the name of this script |
+my $tn   = basename($0);
+my $cmd  = "";
+my @args = ();
 
-sub main {
+# print Dumper(\%options);
 
+# ERRORS
+my $ERR_NO_ARG = "No argument provided.\n";
+
+chdir $core_dir
+  or die "Unable to change directory: $core_dir\n";
+my $setup_script =
+  File::Spec->catfile( $core_dir, 'Scripts', 'Windows', 'Perl', 'setup.bat' );
+my $build_script =
+  File::Spec->catfile( $core_dir, 'Scripts', 'Windows', 'Perl', 'build.bat' );
+
+my %options;
+my %option_actions = (
+    'help|h'        => sub { print_help(); },
+    'setup-help|sh' => sub { print_help_setup(); },
+    'build-help|bh' => sub { print_help_build(); },
+    'setup|s'       => sub { setup(); },
+);
+
+GetOptions( \%options, %option_actions )
+  or die("Error in command line arguments.\n");
+
+unless ( keys %options ) {
+    print_help();
+    exit;
 }
 
-
-sub for_windows {
-    
+foreach my $option ( keys %options ) {
+    if ( defined $options{$option} && exists $option_actions{$option} ) {
+        $option_actions{$option}->( $options{$option} );
+    }
 }
+
+# GetOptions(
+#     'help|h'        => sub { print_help(); },
+#     'setup-help|sh' => sub { print_help_setup(); },
+#     'build-help|bh' => sub { print_help_build(); },
+#     'setup|s'       => sub { setup(); },
+# );
+
+sub print_help {
+    print "Usage:
+    $tn [ ], [-h] [--help] - shows help
+    $tn [-ph] or [--prepare-help] - shows poroject prepare help
+    $tn [-sh] or [--setup-help] - shows cmake setup help
+    $tn [-bh] or [--build-help] - shows cmake build help
+    ";
+    exit;
+}
+
+sub print_help_setup {
+    my @args = ("-help");
+
+    print("Executing: $setup_script @args\n");
+
+    my $exit_status = system( $setup_script, @args );
+    if ( $exit_status == 0 ) {
+        exit;
+    }
+    else {
+        die "Failed to run 'setup.bat': $!\n";
+    }
+}
+
+sub print_help_build {
+    my @args = ("-help");
+
+    print("Executing: $build_script @args\n");
+
+    my $exit_status = system( $build_script, @args );
+    if ( $exit_status == 0 ) {
+        exit;
+    }
+    else {
+        die "Failed to run 'build.bat': $!\n";
+    }
+}
+
+sub setup {
+    if ( !defined $ARGV[0] ) {
+        print("$ERR_NO_ARG");
+        exit;
+    }
+    my @args = @ARGV;
+
+    print("Executing: $setup_script @args\n");
+
+    # exit;
+    my $exit_status = system( $setup_script, @args );
+    if ( $exit_status == 0 ) {
+        exit;
+    }
+    else {
+        die "Failed to run 'setup.bat': $!\n";
+    }
+}
+
+# sub print_help_build {
+#     print "Usage:
+#     $0 [] or [--help] - shows help
+#     ";
+#     exit;
+# }
+
+# exmaple
+# sub com {
+
+#     chdir "$core_dir"
+#       or die "Unable to change directory: '$core_dir'\n";
+
+#     my $cmd  = "setup.bat";
+#     my @args = ("-help");
+
+#     print("Executing: $cmd @args\n");
+
+#     my $exit_status = system( $cmd, @args );
+#     if ( $exit_status == 0 ) {
+#     }
+#     else {
+#         die "Failed to run 'setup.bat': $!\n";
+#     }
+
+#     chdir $core_dir
+#       or die "Unable to change directory: $core_dir\n";
+# }

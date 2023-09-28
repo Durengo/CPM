@@ -1,49 +1,73 @@
+#!/usr/bin/perl
 use strict;
 use warnings;
-use Getopt::Long qw(GetOptions);
+use File::Spec;
+use Getopt::Long;
 use Cwd;
 use Data::Dumper;
+use File::Basename;
+
+# Disable automatic bundling of single-letter options
+Getopt::Long::Configure( "nobundling", "no_auto_abbrev" );
+
+# tn = this_name | the name of this script |
+my $tn = basename($0);
 
 my $working_dir = getcwd();
 chdir $working_dir or die "Unable to change directory: $working_dir\n";
 
-my %options;
-my %option_actions = (
-    "help"           => sub { print_help(); },
-    "vcpkg-location" => sub { vcpkg_location(); },
-    "no-deps-check"  => sub { core_setup_no_dep_check(); },
-);
+# my %options;
+# my %option_actions = (
+#     "help"           => sub { print_help(); },
+#     "vcpkg-location=s" => sub { vcpkg_location(); },
+#     "no-deps-check"  => sub { core_setup_no_dep_check(); },
+# );
 
-GetOptions( \%options, keys %option_actions )
-  or die("Error in command line arguments\n");
+# GetOptions( \%options, keys %option_actions )
+#   or die("Error in command line arguments\n");
 
-# print Dumper(\%options);
+# # print Dumper(\%options);
 
-# Process options dynamically based on the option_actions hash
-foreach my $option ( keys %options ) {
-    if ( defined $options{$option} && exists $option_actions{$option} ) {
-        $option_actions{$option}->( $options{$option} );
-    }
-}
+# # Process options dynamically based on the option_actions hash
+# foreach my $option ( keys %options ) {
+#     if ( defined $options{$option} && exists $option_actions{$option} ) {
+#         $option_actions{$option}->( $options{$option} );
+#     }
+# }
 
-# If no options provided, provide default behavior or instructions
-unless ( keys %options ) {
-    print "Running default setup parameters.\n";
-    core_setup();
+# # If no options provided, provide default behavior or instructions
+# unless ( keys %options ) {
+#     print "Running default setup parameters.\n";
+#     core_setup();
+# }
+
+GetOptions(
+    "help|h"              => sub { print_help(); },
+    "no-local-vcpkg|nlv"  => sub { core_setup(); },
+    "vcpkg-location|vl=s" =>
+      sub { my $name = $_[0]; my $val = $_[1]; vcpkg_location($val); },
+    "no-deps-check|ndc" => sub { core_setup_no_dep_check(); },
+) or die("Error in command line arguments\n");
+
+if ( !defined $ARGV[0] ) {
+    print_help();
 }
 
 sub print_help {
     print "Usage:
-    $0 [] - runs the setup
-    $0 [--help] - shows help
-    $0 [--vcpkg-location <path/to/vcpkg>] - runs the setup with the specified vcpkg directory
-    $0 [--no-deps-check] - runs the setup without checking for runtime dependencies (ONLY FOR CI USE)
+    $tn  - runs the setup
+    $tn [ ], [-h], [--help] - shows help
+    $tn [-nlv], [--no-local-vcpkg] - runs the setup without using a local vcpkg installation
+    $tn [-vl], [--vcpkg-location] = <path/to/vcpkg> - runs the setup with the specified vcpkg directory
+    $tn [-ndc], [--no-deps-check] - runs the setup without checking for runtime dependencies (ONLY FOR CI USE)
     ";
     exit;
 }
 
 sub vcpkg_location {
-    my $location = $ARGV[0];
+
+    # my $location = $ARGV[0];
+    my ($location) = @_;
 
     # my ($location) = @_;
 

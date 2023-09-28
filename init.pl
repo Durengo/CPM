@@ -43,7 +43,10 @@ sub os_specific {
     my $total_steps     = 0;
 
     if ( $os eq 'MSWin32' ) {
-        @steps = ( \&win_setup, \&for_windows, );
+        @steps = (
+            \&win_setup,          \&global_init_cache, \&win_copy_preset,
+            \&win_create_new_cpm, \&win_create_bat_for_cpm,
+        );
 
         $total_steps = scalar(@steps);
 
@@ -66,7 +69,7 @@ sub os_specific {
 }
 
 sub for_windows {
-    win_create_and_write_cpm_file();
+
 }
 
 sub for_linux {
@@ -92,13 +95,8 @@ sub win_setup {
       or die "Unable to change directory: $this_dir\n";
 }
 
-sub win_create_and_write_cpm_file {
-    print("Creating '$provided_dir\\cpm.pl'.\n");
-
-    unless ( -d "$this_dir\\Cache" ) {
-        mkdir "$this_dir\\Cache"
-          or die "Unable to create directory: '$this_dir\\Cache'\n";
-    }
+sub win_copy_preset {
+    print("Copying preset.\n");
 
     my $cpm_script =
       File::Spec->catfile( $this_dir, 'Presets', 'Perl', 'cpm_win' );
@@ -125,7 +123,7 @@ sub win_create_and_write_cpm_file {
 
     my $temp_this_dir = $this_dir;
     $temp_this_dir =~ s/\\/\\\\/g;
-    my $new_string = '$core_dir = "' . $temp_this_dir . '";';
+    my $new_string = 'my $core_dir = "' . $temp_this_dir . '";';
 
     $file_contents =~ s/\Q$old_string\E/$new_string/;
 
@@ -135,6 +133,10 @@ sub win_create_and_write_cpm_file {
     print $fh $file_contents;
 
     close $fh;
+}
+
+sub win_create_new_cpm {
+    print("Creating new cpm.pl\n");
 
     if ( -e "$provided_dir\\cpm.pl" ) {
         unlink "$provided_dir\\cpm.pl"
@@ -142,6 +144,8 @@ sub win_create_and_write_cpm_file {
     }
 
     my $new_cpm_script = File::Spec->catfile( $provided_dir, 'cpm.pl' );
+    my $cached_cpm_script =
+      File::Spec->catfile( $this_dir, 'Cache', 'cpm_win' );
 
     open( my $source_fh, '<', $cached_cpm_script )
       or die "Could not open file 'cpm.pl' in '$this_dir' $!";
@@ -154,6 +158,29 @@ sub win_create_and_write_cpm_file {
 
     close $source_fh;
     close $dest_fh;
+}
+
+sub win_create_bat_for_cpm {
+    print("Creating entrypoint for cpm.pl\n");
+
+    my $batch_entrypoint = File::Spec->catfile( $provided_dir, 'cpm.bat' );
+
+    open( my $fh, '>', $batch_entrypoint )
+      or die "Could not open file 'cpm.bat' $!";
+
+    print $fh "\@echo off\n";
+    print $fh "perl cpm.pl %*\n";
+
+    close $fh;
+}
+
+sub global_init_cache {
+    print("Initializing cache.\n");
+
+    unless ( -d "$this_dir\\Cache" ) {
+        mkdir "$this_dir\\Cache"
+          or die "Unable to create directory: '$this_dir\\Cache'\n";
+    }
 }
 
 # Keepin as template for other OSes.

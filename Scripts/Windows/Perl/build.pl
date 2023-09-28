@@ -1,7 +1,16 @@
+#!/usr/bin/perl
 use strict;
 use warnings;
+use File::Spec;
 use Getopt::Long;
 use Cwd;
+use Data::Dumper;
+use File::Basename;
+
+# Disable automatic bundling of single-letter options
+Getopt::Long::Configure( "nobundling", "no_auto_abbrev" );
+
+my $tn = basename($0);
 
 my $os = $^O;
 
@@ -55,17 +64,17 @@ unless ( keys %options ) {
 
 sub print_help {
     print "Usage:
-    $0 [] - runs the build on the current platform and rebuilds everything in debug
-    $0 [--help] - shows help
-    $0 [--debug] - runs the build on the current platform and rebuilds everything in debug (does not clean)
-    $0 [--release] - runs the build on the current platform and rebuilds everything in release (does not clean)
-    $0 [--clean] - removes the \"build\" and the \"Install\" directories
-    $0 [--clean-build] - removes the \"build\" directory
-    $0 [--clean-install] - removes the \"Install\" directory
-    $0 [--clean-rebuild] - removes the \"build\" and the \"Install\" directories and rebuilds everything in debug
-    $0 [--clean-rebuild-release] - removes the \"build\" and the \"Install\" directories and rebuilds everything in release
-    $0 [--clean-reinstall] - removes the \"Install\" directory and reinstalls in debug
-    $0 [--clean-reinstall-release] - removes the \"Install\" directory and reinstalls in release
+    $tn [] - runs the build on the current platform and rebuilds everything in debug
+    $tn [--help] - shows help
+    $tn [--debug] - runs the build on the current platform and rebuilds everything in debug (does not clean)
+    $tn [--release] - runs the build on the current platform and rebuilds everything in release (does not clean)
+    $tn [--clean] - removes the \"build\" and the \"Install\" directories
+    $tn [--clean-build] - removes the \"build\" directory
+    $tn [--clean-install] - removes the \"Install\" directory
+    $tn [--clean-rebuild] - removes the \"build\" and the \"Install\" directories and rebuilds everything in debug
+    $tn [--clean-rebuild-release] - removes the \"build\" and the \"Install\" directories and rebuilds everything in release
+    $tn [--clean-reinstall] - removes the \"Install\" directory and reinstalls in debug
+    $tn [--clean-reinstall-release] - removes the \"Install\" directory and reinstalls in release
     ";
     exit;
 }
