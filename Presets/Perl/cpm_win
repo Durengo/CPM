@@ -61,7 +61,7 @@ foreach my $option ( keys %options ) {
 
 sub print_help {
     print "Usage:
-    $tn [ ], [-h] [--help] - shows help
+    $tn [ ], [-h], [--help] - shows help
     $tn [-ph] or [--prepare-help] - shows poroject prepare help
     $tn [-sh] or [--setup-help] - shows cmake setup help
     $tn [-bh] or [--build-help] - shows cmake build help
