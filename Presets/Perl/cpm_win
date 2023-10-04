@@ -25,6 +25,8 @@ my $ERR_NO_ARG = "No argument provided.\n";
 
 chdir $core_dir
   or die "Unable to change directory: $core_dir\n";
+my $gen_script =
+  File::Spec->catfile( $core_dir, 'Scripts', 'Windows', 'Perl', 'gen.bat' );
 my $setup_script =
   File::Spec->catfile( $core_dir, 'Scripts', 'Windows', 'Perl', 'setup.bat' );
 my $build_script =
@@ -33,6 +35,7 @@ my $build_script =
 my %options;
 my %option_actions = (
     'help|h'        => sub { print_help(); },
+    'gen-help|gh'   => sub { print_help_generate(); },
     'setup-help|sh' => sub { print_help_setup(); },
     'build-help|bh' => sub { print_help_build(); },
     'setup|s'       => sub { setup(); },
@@ -62,11 +65,25 @@ foreach my $option ( keys %options ) {
 sub print_help {
     print "Usage:
     $tn [ ], [-h], [--help] - shows help
-    $tn [-ph] or [--prepare-help] - shows poroject prepare help
+    $tn [-gh] or [--gen-help] - shows poroject generation help
     $tn [-sh] or [--setup-help] - shows cmake setup help
     $tn [-bh] or [--build-help] - shows cmake build help
     ";
     exit;
+}
+
+sub print_help_generate {
+    my @args = ("-help");
+
+    print("Executing: $gen_script @args\n");
+
+    my $exit_status = system( $gen_script, @args );
+    if ( $exit_status == 0 ) {
+        exit;
+    }
+    else {
+        die "Failed to run 'gen.bat': $!\n";
+    }
 }
 
 sub print_help_setup {

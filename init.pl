@@ -9,15 +9,24 @@ my $os;
 my $this_dir;
 my $provided_dir;
 
+my $RED   = "\e[31m";
+my $GREEN = "\e[32m";
+my $RESET = "\e[0m";
+
 main();
 
 sub main {
     if ( !defined $ARGV[0] ) {
         die "Please provide a directory to install cpm.pl\n";
     }
-    print("Beginning initialization process.\n");
+    print_col( $GREEN, "Beginning initialization process.\n" );
     os_specific();
-    print("Finished initialization process.\n");
+    print_col( $GREEN, "\nFinished initialization process." );
+}
+
+sub print_col {
+    my ( $color, $text ) = @_;
+    print "$color$text$RESET\n";
 }
 
 sub check_os {
@@ -44,8 +53,14 @@ sub os_specific {
 
     if ( $os eq 'MSWin32' ) {
         @steps = (
-            \&win_setup,          \&global_init_cache, \&win_copy_preset,
-            \&win_create_new_cpm, \&win_create_bat_for_cpm,
+            \&win_setup, \&global_init_cache,
+
+            # Libraries
+            # \&for_all_install_term_lib,
+            # \&for_all_install_log4perl_lib,
+
+            # Libraries
+            \&win_copy_preset, \&win_create_new_cpm, \&win_create_bat_for_cpm,
         );
 
         $total_steps = scalar(@steps);
@@ -64,7 +79,6 @@ sub os_specific {
         $completed_steps++;
         print("[$completed_steps/$total_steps] ");
         $check_step->();
-        print("\n");
     }
 }
 
@@ -80,6 +94,68 @@ sub for_mac {
 
 }
 
+# sub for_all_install_term_lib {
+#     print("Checking if Term::Menus is installed.\n");
+#     my $module = 'Term::Menus';
+
+#     eval "require $module";
+
+#     if ( !$@ ) {
+#         print("Term::Menus is already installed.\n");
+#         print_col( $GREEN, "[DONE]" );
+#         return;
+#     }
+#     else {
+#         print("Term::Menus is not installed.\n");
+#     }
+
+#     print("Installing Term::Menus.\n");
+#     my $cmd  = "cpanm";
+#     my @args = ("TMMemHandle");
+
+#     print("Executing: $cmd @args\n");
+
+#     my $exit_status = system( $cmd, @args );
+#     if ( $exit_status == 0 ) {
+#         print_col( $GREEN, "[DONE]" );
+#         return;
+#     }
+#     else {
+#         die "Failed to execute '$cmd', '@args': $!\n";
+#     }
+# }
+
+# sub for_all_install_log4perl_lib {
+#     print("Checking if Log::Log4perl::Level is installed.\n");
+#     my $module = 'Log::Log4perl::Level';
+
+#     eval "require $module";
+
+#     if ( !$@ ) {
+#         print("Log::Log4perl::Level is already installed.\n");
+#         print_col( $GREEN, "[DONE]" );
+#         return;
+#     }
+#     else {
+#         print("Log::Log4perl::Level is not installed.\n");
+#     }
+
+#     print("Installing Log::Log4perl::Level.\n");
+#     my $cmd  = "cpanm";
+#     my @args = ("Log::Log4perl");
+
+#     print("Executing: $cmd @args\n");
+
+#     my $exit_status = system( $cmd, @args );
+#     if ( $exit_status == 0 ) {
+#         print_col( $GREEN, "[DONE]" );
+#         return;
+#     }
+#     else {
+#         die "Failed to execute '$cmd', '@args': $!\n";
+#     }
+# }
+
 sub win_setup {
     print("Locating directories.\n");
 
@@ -93,6 +169,8 @@ sub win_setup {
 
     chdir $this_dir
       or die "Unable to change directory: $this_dir\n";
+
+    print_col( $GREEN, "[DONE]" );
 }
 
 sub win_copy_preset {
@@ -133,6 +211,8 @@ sub win_copy_preset {
     print $fh $file_contents;
 
     close $fh;
+
+    print_col( $GREEN, "[DONE]" );
 }
 
 sub win_create_new_cpm {
@@ -158,6 +238,8 @@ sub win_create_new_cpm {
 
     close $source_fh;
     close $dest_fh;
+
+    print_col( $GREEN, "[DONE]" );
 }
 
 sub win_create_bat_for_cpm {
@@ -172,6 +254,8 @@ sub win_create_bat_for_cpm {
     print $fh "perl cpm.pl %*\n";
 
     close $fh;
+
+    print_col( $GREEN, "[DONE]" );
 }
 
 sub global_init_cache {
@@ -181,6 +265,8 @@ sub global_init_cache {
         mkdir "$this_dir\\Cache"
           or die "Unable to create directory: '$this_dir\\Cache'\n";
     }
+
+    print_col( $GREEN, "[DONE]" );
 }
 
 # Keepin as template for other OSes.
