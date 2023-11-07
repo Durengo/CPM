@@ -58,6 +58,11 @@ sub os_specific {
             # Libraries
             # \&for_all_install_term_lib,
             # \&for_all_install_log4perl_lib,
+            \&for_all_install_cli_framework,
+            \&for_all_install_json_xs,
+            \&for_all_install_cache_filecache,
+            \&for_all_install_boolean,
+            \&for_all_install_string_util,
 
             # Libraries
             \&win_copy_preset, \&win_create_new_cpm, \&win_create_bat_for_cpm,
@@ -93,6 +98,191 @@ sub for_linux {
 sub for_mac {
 
 }
+
+sub for_all_install_cli_framework {
+    print("Checking if CLI::Framework is installed.\n");
+    my $module = 'CLI::Framework';
+
+    eval "require $module";
+
+    if ( !$@ ) {
+        print("CLI::Framework is already installed.\n");
+        print_col( $GREEN, "[DONE]" );
+        return;
+    }
+    else {
+        print("CLI::Framework is not installed.\n");
+    }
+
+    print("Installing CLI::Framework.\n");
+    my $cmd  = "cpanm";
+    my @args = ("CLI::Framework");
+
+    print("Executing: $cmd @args\n");
+
+    my $exit_status = system( $cmd, @args );
+    if ( $exit_status == 0 ) {
+        print_col( $GREEN, "[DONE]" );
+        return;
+    }
+    else {
+        die "Failed to execute '$cmd', '@args': $!\n";
+    }
+}
+
+sub for_all_install_json_xs {
+    print("Checking if JSON::XS is installed.\n");
+    my $module = 'JSON::XS';
+
+    eval "require $module";
+
+    if ( !$@ ) {
+        print("JSON::XS is already installed.\n");
+        print_col( $GREEN, "[DONE]" );
+        return;
+    }
+    else {
+        print("JSON::XS is not installed.\n");
+    }
+
+    print("Installing JSON::XS.\n");
+    my $cmd  = "cpanm";
+    my @args = ("JSON::XS");
+
+    print("Executing: $cmd @args\n");
+
+    my $exit_status = system( $cmd, @args );
+    if ( $exit_status == 0 ) {
+        print_col( $GREEN, "[DONE]" );
+        return;
+    }
+    else {
+        die "Failed to execute '$cmd', '@args': $!\n";
+    }
+}
+
+sub for_all_install_cache_filecache {
+    print("Checking if Cache::FileCache is installed.\n");
+    my $module = 'Cache::FileCache';
+
+    eval "require $module";
+
+    if ( !$@ ) {
+        print("Cache::FileCache is already installed.\n");
+        print_col( $GREEN, "[DONE]" );
+        return;
+    }
+    else {
+        print("Cache::FileCache is not installed.\n");
+    }
+
+    print("Installing Cache::FileCache.\n");
+    my $cmd  = "cpanm";
+    my @args = ("Cache::FileCache");
+
+    print("Executing: $cmd @args\n");
+
+    my $exit_status = system( $cmd, @args );
+    if ( $exit_status == 0 ) {
+        print_col( $GREEN, "[DONE]" );
+        return;
+    }
+    else {
+        die "Failed to execute '$cmd', '@args': $!\n";
+    }
+}
+
+sub for_all_install_boolean {
+    print("Checking if JSON::PP is installed.\n");
+    my $module = 'JSON::PP';
+
+    eval "require $module";
+
+    if ( !$@ ) {
+        print("JSON::PP is already installed.\n");
+        print_col( $GREEN, "[DONE]" );
+        return;
+    }
+    else {
+        print("JSON::PP is not installed.\n");
+    }
+
+    print("Installing JSON::PP.\n");
+    my $cmd  = "cpanm";
+    my @args = ("JSON::PP");
+
+    print("Executing: $cmd @args\n");
+
+    my $exit_status = system( $cmd, @args );
+    if ( $exit_status == 0 ) {
+        print_col( $GREEN, "[DONE]" );
+        return;
+    }
+    else {
+        die "Failed to execute '$cmd', '@args': $!\n";
+    }
+}
+
+sub for_all_install_string_util {
+    print("Checking if String::Util is installed.\n");
+    my $module = 'String::Util';
+
+    eval "require $module";
+
+    if ( !$@ ) {
+        print("String::Util is already installed.\n");
+        print_col( $GREEN, "[DONE]" );
+        return;
+    }
+    else {
+        print("String::Util is not installed.\n");
+    }
+
+    print("Installing String::Util.\n");
+    my $cmd  = "cpanm";
+    my @args = ("String::Util");
+
+    print("Executing: $cmd @args\n");
+
+    my $exit_status = system( $cmd, @args );
+    if ( $exit_status == 0 ) {
+        print_col( $GREEN, "[DONE]" );
+        return;
+    }
+    else {
+        die "Failed to execute '$cmd', '@args': $!\n";
+    }
+}
+# sub for_all_install_boolean2 {
+#     print("Checking if boolean is installed.\n");
+#     my $module = 'boolean';
+
+#     eval "require $module";
+
+#     if ( !$@ ) {
+#         print("boolean is already installed.\n");
+#         print_col( $GREEN, "[DONE]" );
+#         return;
+#     }
+#     else {
+#         print("boolean is not installed.\n");
+#     }
+
+#     print("Installing boolean.\n");
+#     my $cmd  = "cpanm";
+#     my @args = ("boolean");
+
+#     print("Executing: $cmd @args\n");
+
+#     my $exit_status = system( $cmd, @args );
+#     if ( $exit_status == 0 ) {
+#         print_col( $GREEN, "[DONE]" );
+#         return;
+#     }
+#     else {
+#         die "Failed to execute '$cmd', '@args': $!\n";
+#     }
+# }
 
 # sub for_all_install_term_lib {
 #     print("Checking if Term::Menus is installed.\n");
