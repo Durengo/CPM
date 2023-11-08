@@ -383,7 +383,7 @@ sub vcpkg_setup {
 
         chdir $working_dir or die "Unable to change directory: $working_dir\n";
 
-        my $new_dir    = "vendor";
+        my $new_dir    = "Vendor";
         my $vcpkg_repo = "https://github.com/microsoft/vcpkg";
 
         if ( -d "$new_dir/vcpkg" ) {
