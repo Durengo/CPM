@@ -71,6 +71,7 @@ sub os_specific {
             \&for_all_install_string_util,
             \&for_all_install_try_tiny,
             \&copy_install_example,
+            \&for_all_install_term_lib,
 
             # Libraries
             \&copy_preset, \&create_new_cpm, \&win_create_bat_for_cpm,
@@ -293,6 +294,37 @@ sub for_all_install_try_tiny {
     }
 }
 
+sub for_all_install_term_lib {
+    print("Checking if Term::Menus is installed.\n");
+    my $module = 'Term::Menus';
+
+    eval "require $module";
+
+    if ( !$@ ) {
+        print("Term::Menus is already installed.\n");
+        print_col( $GREEN, "[DONE]" );
+        return;
+    }
+    else {
+        print("Term::Menus is not installed.\n");
+    }
+
+    print("Installing Term::Menus.\n");
+    my $cmd  = "cpanm";
+    my @args = ("TMMemHandle");
+
+    print("Executing: $cmd @args\n");
+
+    my $exit_status = system( $cmd, @args );
+    if ( $exit_status == 0 ) {
+        print_col( $GREEN, "[DONE]" );
+        return;
+    }
+    else {
+        die "Failed to execute '$cmd', '@args': $!\n";
+    }
+}
+
 sub copy_preset {
     print("Copying preset.\n");
 
@@ -407,37 +439,6 @@ sub copy_install_example {
 #     print("Installing boolean.\n");
 #     my $cmd  = "cpanm";
 #     my @args = ("boolean");
-
-#     print("Executing: $cmd @args\n");
-
-#     my $exit_status = system( $cmd, @args );
-#     if ( $exit_status == 0 ) {
-#         print_col( $GREEN, "[DONE]" );
-#         return;
-#     }
-#     else {
-#         die "Failed to execute '$cmd', '@args': $!\n";
-#     }
-# }
-
-# sub for_all_install_term_lib {
-#     print("Checking if Term::Menus is installed.\n");
-#     my $module = 'Term::Menus';
-
-#     eval "require $module";
-
-#     if ( !$@ ) {
-#         print("Term::Menus is already installed.\n");
-#         print_col( $GREEN, "[DONE]" );
-#         return;
-#     }
-#     else {
-#         print("Term::Menus is not installed.\n");
-#     }
-
-#     print("Installing Term::Menus.\n");
-#     my $cmd  = "cpanm";
-#     my @args = ("TMMemHandle");
 
 #     print("Executing: $cmd @args\n");
 
