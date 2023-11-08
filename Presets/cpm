@@ -1,0 +1,78 @@
+#!/usr/bin/perl
+use strict;
+use warnings;
+# use lib this;
+# BEGIN STMT;
+
+my $app = CPM->new();
+$app->set_default_command('help');
+$app->run();
+
+package CPM;
+use base qw(CLI::Framework);
+
+# sub command_map {
+#     qw(
+#       hello      CPM::Command::Hello
+#       greet      CPM::Command::Greet
+#     );
+# }
+
+sub command_map {
+    (
+        # 'help' => 'CLI::Framework::Command::Help',
+        'help'     => 'CPM::Command::MyHelp',
+        'generate' => 'CPM::Command::Generate',
+        'setup'    => 'CPM::Command::Setup',
+        'build'    => 'CPM::Command::Build',
+    )
+}
+
+sub command_alias {
+    'h'   => 'help',
+      'g' => 'generate',
+      's' => 'setup',
+      'b' => 'build',
+      ;
+}
+
+sub usage_text {
+    qq{
+    Usage: $0 <verb> <args> ...
+
+    \t# Help (this)
+    \t<h|help>
+
+    \t# Help - Generation
+    \t<h|help> generate
+
+    \t# Help - Setup
+    \t<h|help> setup
+
+    \t# Help - Build
+    \t<h|help> build
+
+    \t# Generate
+    \t<g|generate> <name> <path>
+
+    \t# Setup
+    \t<s|setup> <name> <path>
+
+    \t# Build
+    \t<b|build> <name> <path>
+    
+    Options:
+      -h, --help\tHow to use this application
+
+};
+}
+
+sub option_spec {
+    [ 'help|h' => 'show help' ]
+}
+
+# ...
+
+# my $app = CPM->new();
+
+# CPM->new()->run();
