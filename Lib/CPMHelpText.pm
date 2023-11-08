@@ -89,4 +89,14 @@ sub build_help {
 };
 }
 
+sub generate_help {
+    return qq{
+    Usage: $0 generate <verb> <args> ...
+
+    \t# Template
+    \t<t|template>
+
+};
+}
+
 1;

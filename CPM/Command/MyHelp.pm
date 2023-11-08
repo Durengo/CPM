@@ -32,10 +32,7 @@ sub run {
 }
 
 sub generate_help {
-    return qq{
-    Usage: $0 generate <verb> <args> ...
-
-};
+    return CPMHelpText::generate_help;
 }
 
 sub setup_help {
