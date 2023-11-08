@@ -5,11 +5,11 @@ import sys
 import json
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
-options_cache_dir = os.path.join(script_dir, "options_cache.json")
+options_cache_dir = os.path.join(script_dir, "..", "Cache", "options_cache.json")
 compiler = "Visual Studio 17 2022"
 toolchain_path = ""
 source_dir_arg = ".."
-build_dir_arg = "build"
+build_dir_arg = "Build"
 build_type_arg = "Debug"
 binary_dir_arg = build_type_arg + "-Build"
 install_dir_arg = "Install"
@@ -29,6 +29,7 @@ def check_cache():
         with open(options_cache_dir, "w") as cache_file:
             json.dump({}, cache_file)
         print("Cache not found! Creating new cache file.")
+        # print(f"Options cache dir: {options_cache_dir} | script dir: {script_dir}")
         write_to_cache("first_setup", "False")
     else:
         print("Cache found!")
@@ -142,7 +143,8 @@ def find_vcpkg_root():
 def prepare_cmake_variables():
     check_platform()
     global source_dir, build_dir, binary_dir, toolchain_path, install_dir
-    source_dir = os.path.join(script_dir, source_dir_arg)
+    # source_dir = os.path.join(script_dir, source_dir_arg)
+    source_dir = get_from_cache("source_directory")
     build_dir = os.path.join(source_dir, build_dir_arg)
     binary_dir = os.path.join(source_dir, binary_dir_arg)
     install_dir = os.path.join(
@@ -405,7 +407,7 @@ def help():
     print('''usage:
           setup.py [NO ARGS] ---> run default menu
           setup.py [-h | --help] ---> print this help info
-          setup.py [-cah | --cache-help] ---> print help info for cache
+          setup.py [-ca | --cache-help] ---> print help info for cache
           setup.py [-ph | --project-help] ---> print help info for project management
           ''')
 
@@ -413,7 +415,7 @@ def help():
 def cache_help():
     print('''usage:
           setup.py [-cg | --cache-generate <vcpkg_root>] ---> generate cache file
-          setup.py [-ca | --cache] ---> print cache contents
+          setup.py [-cp | --cache] ---> print cache contents
           setup.py [-cae | --cache-edit] ---> edit cache
           setup.py [-cag | --cache-get <key>] ---> get value from cache
           ''')
@@ -439,6 +441,9 @@ def project_help():
 
 
 if __name__ == "__main__":
+    # print("Args:")
+    # for arg in sys.argv:
+    #     print(arg)
     if (len(sys.argv) == 1):
         check_cache()
         try:
@@ -453,7 +458,7 @@ if __name__ == "__main__":
             case "-h" | "--help":
                 help()
             # Cache operations
-            case "-cah" | "--cache-help":
+            case "-ca" | "--cache-help":
                 cache_help()
             case "-cg" | "--cache-generate":
                 check_cache()
@@ -461,7 +466,7 @@ if __name__ == "__main__":
                     arg_first_setup(sys.argv[2])
                 else:
                     first_setup()
-            case "-ca" | "--cache":
+            case "-cp" | "--cache":
                 print_cache()
             case "-cae" | "--cache-edit":
                 edit_cache()
