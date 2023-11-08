@@ -1,39 +1,28 @@
 #!/usr/bin/perl
 use strict;
 use warnings;
-use JSON::PP;
 
 package CPM::Command::Build;
 use base qw(CLI::Framework::Command);
-
 use FindBin;
 use File::Spec;
-
-use lib "$main::CoreDir\\Lib";
-
-# use lib File::Spec->catdir( $FindBin::Bin, '..', 'Lib' );
-use CPMCache;
-
-use CPMLog;
-
+use String::Util 'trim';
+use File::Path 'remove_tree';
+use JSON::PP;
 use Cwd;
 my $working_dir = getcwd();
 
-my $using_vcpkg_location = JSON::PP::false;
+use lib "$main::CoreDir\\Lib";
+use CPMCache;
+use CPMLog;
+use CPMBuildInterface;
+use CPMHelpText;
 
+my $using_vcpkg_location    = JSON::PP::false;
 my $build_environemnt_cache = CPMCache->new();
 my $build_options_cache     = CPMCache->new();
 my $build_installs_cache    = CPMCache->new();
-
-use CPMBuildInterface;
-
-use String::Util 'trim';
-
-use CPMHelpText;
-
-use File::Path 'remove_tree';
-
-my $build_type = "something";
+my $build_type              = "";
 
 sub option_spec {
     [ 'help|h' => 'Display help.' ],
@@ -128,10 +117,10 @@ sub run {
     }
     if ( $opts->{'build'} ) {
 
-        check_build_dir();
         if ( $build_type eq "" ) {
             die "Must provide -r or -d option beforehand.\n";
         }
+        check_build_dir();
         execute_build_py( '--project-build', $build_type );
     }
     if ( $opts->{'install'} ) {
@@ -168,22 +157,6 @@ sub run {
         }
     }
 
-    # elsif ( $opts->{'project_build'} ) {
-    #     my $arg1 = $opts->{'project_build'};
-    #     execute_build_py( '--project-build', $arg1 );
-    # }
-    # elsif ( $opts->{'project_install'} ) {
-    #     my $arg1 = $opts->{'project_install'};
-    #     execute_build_py( '--project-install', $arg1 );
-    # }
-
-    # if ( keys %$opts ) {
-
-    # }
-    # else {
-
-    # }
-
     return 0;
 }
 
@@ -199,10 +172,6 @@ sub check_build_dir {
         my ( $success, $value ) =
           $build_environemnt_cache->try_get_pair('last_used_system_type');
         if ($success) {
-
-            # my $arg1 =
-            #   $build_environemnt_cache->get_pair('last_used_system_type');
-            # execute_build_py( '--project-generate', $arg1, $build_type );
             execute_build_py( '--project-generate', $value, $build_type );
         }
         else {
@@ -231,7 +200,6 @@ sub clean_build_dir {
         if ( -d $build_dir ) {
             print "Removing $build_dir\n";
 
-            # rmdir $build_dir or die "Unable to remove $build_dir: $!";
             remove_tree( $build_dir, { error => \my $err } );
             if (@$err) {
                 for my $diag (@$err) {
@@ -255,9 +223,6 @@ sub clean_build_dir {
 }
 
 sub clean_install_dir {
-
-    # my $install_dir = File::Spec->canonpath("$main::CoreDir\\Install");
-
     my $install_dir = "";
 
     my ( $success, $value ) =
@@ -277,7 +242,6 @@ sub clean_install_dir {
         if ( -d $install_dir ) {
             print "Removing $install_dir\n";
 
-            # rmdir $install_dir or die "Unable to remove $install_dir: $!";
             remove_tree( $install_dir, { error => \my $err } );
             if (@$err) {
                 for my $diag (@$err) {
@@ -335,111 +299,6 @@ sub execute_build_py {
     }
 
 }
-
-# sub execute_build_py_and_get_key {
-#     my @args = @_;
-
-#     my $build_py = CPMBuildInterface::get_build_py();
-#     my $cmd      = "py \"$build_py\"";
-
-#     print("Executing: $cmd @args\n");
-
-#     my $script_location = CPMBuildInterface::get_script_location();
-#     chdir $script_location
-#       or die "Unable to change directory: $script_location\n";
-
-#     my $exit_status = system( $cmd, @args );
-#     if ( $exit_status == 0 ) {
-#         CPMLog::info("Successfully executed build.py");
-#     }
-#     else {
-#         die "Failed to generate project: $!\n";
-#     }
-
-#     chdir $working_dir
-#       or die "Unable to change directory: $working_dir\n";
-
-#     my $key = $build_environemnt_cache->get_pair('generated_vcpkg_location');
-#     return $key;
-# }
-
-# sub run_vcpkg_location {
-
-#     # my $vcpkg_location = shift;
-#     # my @prerequisites  = @_;
-
-#     my (
-#         $vcpkg_location, $prerequisites_ref,
-#         $packages_ref,   $skip_package_configurations
-#     ) = @_;
-
-#     my @prerequisites = @{$prerequisites_ref};
-#     my @packages      = @{$packages_ref};
-
-#     my @prerequisite_checks;
-
-#     # my @prerequisite_checks = (
-#     #     \&check_git,    \&check_cmake,
-#     #     \&check_python, \&check_msvc_compiler,
-
-#     #     # \&vcpkg_setup,      \&vcpkg_package_1,
-#     #     # \&vcpkg_package_2,  \&vcpkg_package_3,
-#     #     # \&vcpkg_package_4,  \&vcpkg_package_5,
-#     #     # \&vcpkg_package_6,  \&vcpkg_package_7,
-#     #     # \&vcpkg_package_8,  \&vcpkg_package_9,
-#     #     # \&vcpkg_package_10, \&configure_package_4,
-#     #     # \&vcpkg_integrate,  \&purge_previous_options_cache,
-#     #     # \&setup_build_script,
-#     # );
-
-#     # foreach my $pre (@prerequisites) {
-#     #     push @prerequisite_checks, sub { check_prerequisite($pre) };
-#     # }
-
-#     foreach my $pre (@prerequisites) {
-#         my $check_function_name = "check_$pre";
-#         if ( my $coderef = __PACKAGE__->can($check_function_name) ) {
-#             push @prerequisite_checks, $coderef;
-#         }
-#         else {
-#             warn "No check function for $pre";
-#         }
-#     }
-
-#     push @prerequisite_checks, sub { vcpkg_setup($vcpkg_location) };
-
-#     foreach my $pkg (@packages) {
-#         my ( $library, $triplet ) = @{$pkg}{qw/library triplet/};
-#         push @prerequisite_checks,
-#           sub { install_vcpkg_package( $library, $triplet ) };
-#     }
-
-#     push @prerequisite_checks, \&intergrate_vcpkg;
-
-#     if ( $skip_package_configurations eq JSON::PP::false ) {
-#         foreach my $pkg (@packages) {
-#             my ( $library, $triplet ) = @{$pkg}{qw/library triplet/};
-#             push @prerequisite_checks,
-#               sub { configure_package( $library, $triplet ) };
-#         }
-#     }
-#     else {
-#         print "Skipping package configurations...\n";
-#     }
-
-#     # push @prerequisite_checks, sub { configure_packages($packages_ref) };
-
-#     my $total_checks     = scalar(@prerequisite_checks);
-#     my $completed_checks = 0;
-
-#     foreach my $check_function (@prerequisite_checks) {
-#         $completed_checks++;
-
-#         # print_col( $GREEN, "[$completed_checks/$total_checks] " );
-#         print "[$completed_checks/$total_checks] ";
-#         $check_function->();
-#     }
-# }
 
 sub build_help {
     return CPMHelpText::build_help();

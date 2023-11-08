@@ -1,34 +1,29 @@
 #!/usr/bin/perl
 use strict;
 use warnings;
-use JSON::PP;
 
 package CPM::Command::Setup;
 use base qw(CLI::Framework::Command);
-
 use FindBin;
 use File::Spec;
-
-use lib "$main::CoreDir\\Lib";
-use CPMCache;
-
-use CPMLog;
-
+use String::Util 'trim';
+use Try::Tiny;
+use JSON::PP;
 use Cwd;
 my $working_dir = getcwd();
 
-my $using_vcpkg_location = JSON::PP::false;
+use lib "$main::CoreDir\\Lib";
+use CPMCache;
+use CPMLog;
+use CPMBuildInterface;
+use CPMHelpText;
 
+my $using_vcpkg_location    = JSON::PP::false;
 my $setup_environemnt_cache = CPMCache->new();
 my $installs_cache          = CPMCache->new();
 
-use String::Util 'trim';
-
-use CPMBuildInterface;
-
-use Try::Tiny;
-
-use CPMHelpText;
+my $prerequisites;
+my $packages;
 
 sub option_spec {
     [ 'no_local_vcpkg|nlv|n' =>
@@ -47,9 +42,6 @@ sub option_spec {
       ],
       [ 'help|h' => 'Display help.' ],;
 }
-
-my $prerequisites;
-my $packages;
 
 sub run {
     my $self = shift;
@@ -288,8 +280,7 @@ sub vcpkg_setup {
 
         my $options_cache = CPMCache->new();
         $options_cache->init_cache( 'options_cache.json', 0 );
-        $options_cache->put_pair( 'vcpkg_root',
-            $platform_vcpkg_path );
+        $options_cache->put_pair( 'vcpkg_root', $platform_vcpkg_path );
 
   #         my @prerequisite_checks = (
   #             sub {

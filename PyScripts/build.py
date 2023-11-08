@@ -5,7 +5,8 @@ import sys
 import json
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
-options_cache_dir = os.path.join(script_dir, "..", "Cache", "options_cache.json")
+options_cache_dir = os.path.join(
+    script_dir, "..", "Cache", "options_cache.json")
 compiler = "Visual Studio 17 2022"
 toolchain_path = ""
 source_dir_arg = ".."

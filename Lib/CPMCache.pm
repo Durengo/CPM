@@ -9,10 +9,6 @@ use JSON::XS;
 use FindBin;
 use File::Spec;
 
-# my $this_file_dir = $FindBin::Bin;
-# my $json_file_dir = File::Spec->catdir( $this_file_dir, '..', 'Cache' );
-# my $cache;
-
 sub new {
     my $class = shift;
     my $self  = { cache => undef, };
@@ -22,9 +18,6 @@ sub new {
 
 sub init_cache {
     my ( $self, $filename, $overwrite ) = @_;
-
-    # my $this_file_dir = $FindBin::Bin;
-    # my $json_file_dir = File::Spec->catdir( $this_file_dir, '..', 'Cache' );
     my $this_file_dir = $main::CoreDir;
     my $json_file_dir = File::Spec->catdir( $this_file_dir, 'Cache' );
     $self->{cache} = File::Spec->catfile( $json_file_dir, $filename );
@@ -129,98 +122,5 @@ sub try_get_pair {
     }
     return ( 0, undef );
 }
-
-# sub new {
-#     my $class = shift;
-#     return bless {}, $class;
-# }
-
-# sub init_cache {
-#     my ( $self, $filename, $overwrite ) = @_;
-#     $cache = File::Spec->catfile( $json_file_dir, $filename );
-
-#     if ( -e $cache ) {
-#         if ($overwrite) {
-#             unlink $cache or die "Could not unlink '$cache' $!";
-#         }
-#         else {
-#             return
-# "File '$cache' already exists. Use overwrite flag to overwrite it.";
-#         }
-#     }
-
-#     open my $fh, '>', $cache or die "Could not open '$cache' $!";
-#     close $fh;
-
-#     return "Cache initialized at '$cache'";
-# }
-
-# sub get_pair {
-#     my ( $self, $key ) = @_;
-#     return unless $cache && $key;
-
-#     if ( -e $cache ) {
-#         open my $fh, '<', $cache or die "Could not open '$cache' $!";
-#         local $/;
-#         my $json_text = <$fh>;
-#         close $fh;
-
-#         my $data = decode_json($json_text);
-#         return $data->{$key} if exists $data->{$key};
-#     }
-#     return undef;
-# }
-
-# sub get_all {
-#     my $self = shift;
-#     return unless $cache;
-
-#     if ( -e $cache ) {
-#         open my $fh, '<', $cache or die "Could not open '$cache' $!";
-#         local $/;
-#         my $json_text = <$fh>;
-#         close $fh;
-
-#         return $json_text ? decode_json($json_text) : undef;
-#     }
-#     return undef;
-# }
-
-# sub put_pair {
-#     my ( $self, $key, $value ) = @_;
-#     return unless $cache;
-
-#     my $data = $self->get_all() || {};
-#     $data->{$key} = $value;
-
-#     open my $fh, '>', $cache or die "Could not open '$cache' $!";
-#     print $fh encode_json($data);
-#     close $fh;
-# }
-
-# sub try_get_pair {
-#     my ( $self, $key ) = @_;
-#     return unless defined $key;
-
-#     if ( -e $cache ) {
-#         open my $fh, '<', $cache or die "Could not open '$cache' $!";
-#         local $/;
-#         my $json_text = <$fh>;
-#         close $fh;
-
-#         if ( defined $json_text && $json_text ne '' ) {
-#             my $data = eval { decode_json($json_text) };
-#             if ($@) {
-#                 warn "Failed to decode JSON: $@";
-#                 return ( 0, undef );
-#             }
-
-#             if ( exists $data->{$key} ) {
-#                 return ( 1, $data->{$key} );
-#             }
-#         }
-#     }
-#     return ( 0, undef );
-# }
 
 1;

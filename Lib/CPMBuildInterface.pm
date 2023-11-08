@@ -9,13 +9,9 @@ use FindBin;
 use File::Spec;
 use Cwd;
 
-# my $build_py_location = File::Spec->catdir( $FindBin::Bin, '..', 'PyScripts' );
-# my $build_py          = File::Spec->canonpath("$build_py_location/build.py");
-# my $cache_location    = File::Spec->catdir( $FindBin::Bin, '..', 'Cache' );
-
 my $build_py_location = File::Spec->catdir( $main::CoreDir, 'PyScripts' );
-my $build_py       = File::Spec->canonpath("$build_py_location\\build.py");
-my $cache_location = File::Spec->catdir( $main::CoreDir, 'Cache' );
+my $build_py          = File::Spec->canonpath("$build_py_location\\build.py");
+my $cache_location    = File::Spec->catdir( $main::CoreDir, 'Cache' );
 
 sub check_build_py {
     if ( -e $build_py ) {
