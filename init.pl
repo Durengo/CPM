@@ -4,6 +4,10 @@ use warnings;
 use FindBin;
 use File::Spec;
 use File::Copy;
+use File::Basename;
+use Cwd;
+
+my $working_dir = getcwd();
 
 my $os;
 my $this_dir;
@@ -16,9 +20,11 @@ my $RESET = "\e[0m";
 main();
 
 sub main {
-    if ( !defined $ARGV[0] ) {
-        die "Please provide a directory to install cpm.pl\n";
-    }
+
+    # print("Working Dir: $working_dir\n");
+    # if ( !defined $ARGV[0] ) {
+    #     die "Please provide a directory to install cpm.pl\n";
+    # }
     print_col( $GREEN, "Beginning initialization process.\n" );
     os_specific();
     print_col( $GREEN, "\nFinished initialization process." );
@@ -63,9 +69,11 @@ sub os_specific {
             \&for_all_install_cache_filecache,
             \&for_all_install_boolean,
             \&for_all_install_string_util,
+            \&for_all_install_try_tiny,
+            \&copy_install_example,
 
             # Libraries
-            \&win_copy_preset, \&win_create_new_cpm, \&win_create_bat_for_cpm,
+            \&copy_preset, \&create_new_cpm, \&win_create_bat_for_cpm,
         );
 
         $total_steps = scalar(@steps);
@@ -253,6 +261,134 @@ sub for_all_install_string_util {
         die "Failed to execute '$cmd', '@args': $!\n";
     }
 }
+
+sub for_all_install_try_tiny {
+    print("Checking if Try::Tiny is installed.\n");
+    my $module = 'Try::Tiny';
+
+    eval "require $module";
+
+    if ( !$@ ) {
+        print("Try::Tiny is already installed.\n");
+        print_col( $GREEN, "[DONE]" );
+        return;
+    }
+    else {
+        print("Try::Tiny is not installed.\n");
+    }
+
+    print("Installing Try::Tiny.\n");
+    my $cmd  = "cpanm";
+    my @args = ("Try::Tiny");
+
+    print("Executing: $cmd @args\n");
+
+    my $exit_status = system( $cmd, @args );
+    if ( $exit_status == 0 ) {
+        print_col( $GREEN, "[DONE]" );
+        return;
+    }
+    else {
+        die "Failed to execute '$cmd', '@args': $!\n";
+    }
+}
+
+sub copy_preset {
+    print("Copying preset.\n");
+
+    my $cpm_script = File::Spec->catfile( $this_dir, 'Presets', 'cpm' );
+
+    if ( -e "$this_dir\\Cache\\cpm" ) {
+        unlink "$this_dir\\Cache\\cpm"
+          or die "Failed to delete '$this_dir\\Cache\\cpm': $!";
+    }
+
+    my $cached_cpm_script = File::Spec->catfile( $this_dir, 'Cache', 'cpm' );
+
+    copy( $cpm_script, $cached_cpm_script )
+      or die "Unable to copy file: $cpm_script\n";
+
+    open( my $fh, '<', $cached_cpm_script )
+      or die "Unable to open file: $cached_cpm_script\n";
+
+    my $file_contents = do { local $/; <$fh> };
+
+    close $fh;
+
+    my $old_string = '# use lib this;';
+
+    my $temp_this_dir = $this_dir;
+    $temp_this_dir =~ s/\\/\\\\/g;
+    my $new_string = 'use lib \'' . $temp_this_dir . '\';';
+
+    $file_contents =~ s/\Q$old_string\E/$new_string/;
+
+    my $old_string_2 = '# BEGIN STMT;';
+    my $new_string_2 =
+        'BEGIN {' . "\n"
+      . '    our $CoreDir = "'
+      . $temp_this_dir . '";' . "\n" . '}';
+
+    $file_contents =~ s/\Q$old_string_2\E/$new_string_2/;
+
+    open( $fh, '>', $cached_cpm_script )
+      or die "Unable to open file: $cached_cpm_script\n";
+
+    print $fh $file_contents;
+
+    close $fh;
+
+    print_col( $GREEN, "[DONE]" );
+}
+
+sub create_new_cpm {
+    print("Creating new cpm.pl\n");
+
+    if ( -e "$provided_dir\\cpm.pl" ) {
+        unlink "$provided_dir\\cpm.pl"
+          or die "Failed to delete '$provided_dir\\cpm.pl': $!";
+    }
+
+    my $new_cpm_script    = File::Spec->catfile( $provided_dir, 'cpm.pl' );
+    my $cached_cpm_script = File::Spec->catfile( $this_dir, 'Cache', 'cpm' );
+
+    open( my $source_fh, '<', $cached_cpm_script )
+      or die "Could not open file 'cpm.pl' in '$this_dir' $!";
+    open( my $dest_fh, '>', $new_cpm_script )
+      or die "Could not open file 'cpm.pl' $!";
+
+    while ( my $line = <$source_fh> ) {
+        print $dest_fh $line;
+    }
+
+    close $source_fh;
+    close $dest_fh;
+
+    print_col( $GREEN, "[DONE]" );
+}
+
+sub copy_install_example {
+    print("Copying cpm_install.json\n");
+
+    my $source_file = File::Spec->catfile( $this_dir, 'Presets', 'cpm_install' )
+      ;    # This file must exist
+    my $new_extension = '.json';
+
+    my $filename_without_extension = fileparse( $source_file, qr/\.[^.]*/ );
+
+    my $destination_file =
+      $provided_dir . '\\' . $filename_without_extension . $new_extension;
+
+    if ( -e $destination_file ) {
+        print "The file $destination_file already exists. Aborting copy.\n";
+    }
+    else {
+        # Copy the file if it doesn't exist in the destination
+        copy( $source_file, $destination_file ) or die "Copy failed: $!";
+        print "File copied to $destination_file\n";
+    }
+}
+
 # sub for_all_install_boolean2 {
 #     print("Checking if boolean is installed.\n");
 #     my $module = 'boolean';
@@ -351,7 +487,16 @@ sub win_setup {
 
     $this_dir = $FindBin::Bin;
     $this_dir =~ s/\//\\/g;
-    $provided_dir = $ARGV[0];
+
+    if ( !defined $ARGV[0] ) {
+
+        # die "Please provide a directory to install cpm.pl\n";
+        $provided_dir = $working_dir;
+    }
+    else {
+        $provided_dir = $ARGV[0];
+
+    }
 
     if ( $this_dir eq $provided_dir ) {
         die "The provided directory is the same as the current directory.\n";
