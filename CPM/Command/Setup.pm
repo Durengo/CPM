@@ -10,7 +10,6 @@ use String::Util 'trim';
 use Try::Tiny;
 use JSON::PP;
 use Cwd;
-my $working_dir = getcwd();
 
 use lib "$main::CoreDir\\Lib";
 use CPMCache;
@@ -18,6 +17,7 @@ use CPMLog;
 use CPMBuildInterface;
 use CPMHelpText;
 
+my $working_dir             = getcwd();
 my $using_vcpkg_location    = JSON::PP::false;
 my $setup_environemnt_cache = CPMCache->new();
 my $installs_cache          = CPMCache->new();
