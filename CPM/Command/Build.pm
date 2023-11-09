@@ -161,6 +161,8 @@ sub run {
 }
 
 sub check_build_dir {
+    my $build_dir;
+
     my ( $success, $value ) =
       $build_options_cache->try_get_pair('source_directory');
     if ($success) {
@@ -170,7 +172,7 @@ sub check_build_dir {
         die "Source directory is not set.\n";
     }
 
-    my $build_dir = File::Spec->canonpath("$value\\Build");
+    $build_dir = File::Spec->canonpath("$value\\Build");
 
     if ( -e $build_dir ) {
         return;
@@ -178,10 +180,10 @@ sub check_build_dir {
     else {
         print
 "$build_dir does not exist. Attempting to regenerate CMake Project.\n";
-        my ( $success, $value ) =
+        my ( $success2, $value2 ) =
           $build_environemnt_cache->try_get_pair('last_used_system_type');
-        if ($success) {
-            execute_build_py( '--project-generate', $value, $build_type );
+        if ($success2) {
+            execute_build_py( '--project-generate', $value2, $build_type );
         }
         else {
             die "Generate the CMake project at least once.\n";
