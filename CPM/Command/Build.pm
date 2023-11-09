@@ -161,7 +161,16 @@ sub run {
 }
 
 sub check_build_dir {
-    my $build_dir = File::Spec->canonpath("$main::CoreDir\\Build");
+    my ( $success, $value ) =
+      $build_options_cache->try_get_pair('source_directory');
+    if ($success) {
+        $build_dir = File::Spec->canonpath("$value\\Build");
+    }
+    else {
+        die "Source directory is not set.\n";
+    }
+
+    my $build_dir = File::Spec->canonpath("$value\\Build");
 
     if ( -e $build_dir ) {
         return;
