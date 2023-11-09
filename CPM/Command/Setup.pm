@@ -70,62 +70,62 @@ sub run {
     #     print "Library: $package->{library}, Triplet: $package->{triplet}\n";
     # }
 
-    my ( $prerequisites_ref, $packages_ref );
+    my ( $prerequisites_ref, $packages_ref, $post_install_ref );
 
     if ( $opts->{no_local_vcpkg} and $opts->{skip_package_configurations} ) {
-        ( $prerequisites_ref, $packages_ref ) =
+        ( $prerequisites_ref, $packages_ref, $post_install_ref ) =
           retrieve_install_json($installs_cache);
 
         my $vcpkg_location = "";
         $vcpkg_location = try_retrieve_vcpkg_location();
 
         run_vcpkg_location(
-            $vcpkg_location, $prerequisites_ref,
-            $packages_ref,   JSON::PP::true
+            $vcpkg_location,   $prerequisites_ref, $packages_ref,
+            $post_install_ref, JSON::PP::true
         );
     }
     elsif ( $opts->{no_local_vcpkg} ) {
-        ( $prerequisites_ref, $packages_ref ) =
+        ( $prerequisites_ref, $packages_ref, $post_install_ref ) =
           retrieve_install_json($installs_cache);
 
         my $vcpkg_location = "";
         $vcpkg_location = try_retrieve_vcpkg_location();
 
         run_vcpkg_location(
-            $vcpkg_location, $prerequisites_ref,
-            $packages_ref,   JSON::PP::false
+            $vcpkg_location,   $prerequisites_ref, $packages_ref,
+            $post_install_ref, JSON::PP::false
         );
     }
     elsif ( $opts->{vcpkg_location} and $opts->{skip_package_configurations} ) {
-        ( $prerequisites_ref, $packages_ref ) =
+        ( $prerequisites_ref, $packages_ref, $post_install_ref ) =
           retrieve_install_json($installs_cache);
 
         my $vcpkg_location = $opts->{'vcpkg_location'};
 
         # print("vcpkg-location: $vcpkg_location\n")
         run_vcpkg_location(
-            $vcpkg_location, $prerequisites_ref,
-            $packages_ref,   JSON::PP::true
+            $vcpkg_location,   $prerequisites_ref, $packages_ref,
+            $post_install_ref, JSON::PP::true
         );
     }
     elsif ( $opts->{vcpkg_location} ) {
-        ( $prerequisites_ref, $packages_ref ) =
+        ( $prerequisites_ref, $packages_ref, $post_install_ref ) =
           retrieve_install_json($installs_cache);
         my $vcpkg_location = $opts->{'vcpkg_location'};
 
         # print("vcpkg-location: $vcpkg_location\n")
         run_vcpkg_location(
-            $vcpkg_location, $prerequisites_ref,
-            $packages_ref,   JSON::PP::false
+            $vcpkg_location,   $prerequisites_ref, $packages_ref,
+            $post_install_ref, JSON::PP::false
         );
     }
     elsif ( $opts->{no_deps_check} ) {
-        ( $prerequisites_ref, $packages_ref ) =
+        ( $prerequisites_ref, $packages_ref, $post_install_ref ) =
           retrieve_install_json($installs_cache);
         run_do_deps_check();
     }
     elsif ( $opts->{force_package_install} ) {
-        ( $prerequisites_ref, $packages_ref ) =
+        ( $prerequisites_ref, $packages_ref, $post_install_ref ) =
           retrieve_install_json($installs_cache);
         force_package_install();
     }
@@ -192,7 +192,11 @@ sub retrieve_install_json {
         print "Library: $package->{library}, Triplet: $package->{triplet}\n";
     }
 
-    return ( $prerequisites_ref, $packages_ref );
+    my $post_install_ref = $installs_cache->get_pair('post_install');
+    CPMLog::trace("Detected Post Install Requests: ");
+    print join( ", ", @{$post_install_ref} ) . "\n";
+
+    return ( $prerequisites_ref, $packages_ref, $post_install_ref );
 }
 
 sub check_vcpkg {
@@ -517,6 +521,104 @@ sub check_cl {
         die "MSVC compiler is not installed or an error occurred.\n";
     }
 }
+
+sub post_venv {
+    print("Running Venv Post-Install Configuration...\n");
+
+    my $PY_VENV_DIR = "venv"
+}
+
+# sub setup_venv {
+#     print "Setting up venv for usage ...\n";
+
+#     if ( -d $venv_dir ) {
+#         print "Directory '$venv_dir' already exists. Clearing...\n";
+#         chdir "$working_dir/$venv_dir/Scripts"
+#           or die "Unable to change directory: $working_dir/$venv_dir/Scripts\n";
+#         my $exit_status = system("deactivate");
+#         if ( $exit_status == 0 ) {
+#             print "Python venv deactivated successfully.\n";
+#         }
+#         else {
+#             die "Failed to deactivate Python venv: $!\n";
+#         }
+#         chdir $working_dir or die "Unable to change directory: $working_dir\n";
+#         rmdir $venv_dir    or die "Failed to clear directory '$venv_dir': $!\n";
+#     }
+#     else {
+#         mkdir $venv_dir
+#           or die "Failed to create directory '$venv_dir': $!\n";
+#         print "Directory '$venv_dir' created successfully.\n";
+#     }
+
+#     # chdir $venv_dir or die "Unable to change directory: '$venv_dir'\n";
+
+#     my $vcpkg_location = $ARGV[0];
+
+#     if ( defined $vcpkg_location ) {
+#         my $path_to_python_interpretor =
+#           "$vcpkg_location/installed/x64-windows/tools/python3";
+#         chdir $path_to_python_interpretor
+#           or die "Unable to change directory: $path_to_python_interpretor\n";
+#         my $exit_status = system("python -m venv $working_dir/$venv_dir");
+#         if ( $exit_status == 0 ) {
+#             print "Python venv initialized successfully.\n";
+#         }
+#         else {
+#             die "Failed to initialize Python venv: $!\n";
+#         }
+#     }
+#     else {
+#         my $path_to_python_interpretor =
+#           "$working_dir/vendor/vcpkg/installed/x64-windows/tools/python3";
+#         chdir $path_to_python_interpretor
+#           or die "Unable to change directory: $path_to_python_interpretor\n";
+#         my $exit_status = system("python -m venv $working_dir/$venv_dir");
+#         if ( $exit_status == 0 ) {
+#             print "Python venv initialized successfully.\n";
+#         }
+#         else {
+#             die "Failed to initialize Python venv: $!\n";
+#         }
+#     }
+
+#     chdir "$working_dir\\$venv_dir\\Scripts"
+#       or die "Unable to change directory: $working_dir\\$venv_dir\\Scripts\n";
+#     {
+#         my $exit_status = system("activate");
+#         if ( $exit_status == 0 ) {
+#             print "Python venv activated successfully.\n";
+#         }
+#         else {
+#             die "Failed to activate Python venv: $!\n";
+#         }
+#     }
+
+#     chdir $working_dir or die "Unable to change directory: $working_dir\n";
+# }
+
+# sub store_venv_location_to_cache {
+#     print "Using build.py to set venv location to cache...\n";
+
+#     chdir "utils" or die "Unable to change directory: utils\n";
+
+#     my $cmd  = "build.bat";
+#     my @args = (
+#         "-can-vp",
+# "venv_root:$working_dir/vendor/vcpkg/installed/x64-windows/tools/python3"
+#     );
+
+#     my $exit_status = system( $cmd, @args );
+#     if ( $exit_status == 0 ) {
+#         print "venv location saved to cache.\n";
+#     }
+#     else {
+#         die "Failed to save venv location to cache: $!\n";
+#     }
+
+#     chdir $working_dir
+#       or die "Unable to change directory: $working_dir\n";
+# }
 
 sub install_vcpkg_package {
     my ( $package, $triplet ) = @_;
@@ -925,13 +1027,13 @@ sub run_vcpkg_location {
     # my $vcpkg_location = shift;
     # my @prerequisites  = @_;
 
-    my (
-        $vcpkg_location, $prerequisites_ref,
-        $packages_ref,   $skip_package_configurations
-    ) = @_;
+    my ( $vcpkg_location, $prerequisites_ref,
+        $packages_ref, $post_install_ref, $skip_package_configurations )
+      = @_;
 
     my @prerequisites = @{$prerequisites_ref};
     my @packages      = @{$packages_ref};
+    my @post_install  = @{$post_install_ref};
 
     my @prerequisite_checks;
 
@@ -987,6 +1089,16 @@ sub run_vcpkg_location {
     }
 
     # push @prerequisite_checks, sub { configure_packages($packages_ref) };
+
+    foreach my $post (@post_install) {
+        my $check_function_name = "post_$post";
+        if ( my $coderef = __PACKAGE__->can($check_function_name) ) {
+            push @prerequisite_checks, $coderef;
+        }
+        else {
+            warn "No check function for $post";
+        }
+    }
 
     push @prerequisite_checks, \&add_source_directory;
 
