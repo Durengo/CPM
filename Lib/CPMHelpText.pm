@@ -42,21 +42,20 @@ sub build_help {
     \t# Get a value from the cache by key.
     \t<cag|cache_get> <key>
 
-    \t# Generate CMake project.
-    \t<pg|project_generate> <system-type> <build-type>
-    \tSystem types: "nt/msvc", "unix/clang", "unix/gcc"
-    \tBuild types: "Debug", "Release"
-    \tExample: <pg|project_generate> "nt/msvc" <pg|project_generate> "Debug"
-    \tNotes:
-    \t* This will generate the CMake project in the current directory.
-    \t* This will NOT overwrite any existing CMake project (if the project was already generated).
-    \t* Both arguments are required.
-
     \t# Prepares script to work with release.
     \t<r|release>
 
     \t# Prepares script to work with debug.
     \t<d|debug>
+
+    \t# Generate CMake project. Must provide -r or -d option beforehand.
+    \t<pg|project_generate> <system-type> <build-type>
+    \tCompiler types: "nt/msvc", "unix/clang", "unix/gcc"
+    \tExample: -r <pg|project_generate> "nt/msvc"
+    \tNotes:
+    \t* This will generate the CMake project in the current directory.
+    \t* This will NOT overwrite any existing CMake project (if the project was already generated).
+    \t* Both arguments are required.
 
     \t# Builds the generated CMake Project. Must provide -r or -d option beforehand.
     \t<b|build>
