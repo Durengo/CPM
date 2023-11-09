@@ -109,11 +109,11 @@ sub run {
     }
     if ( $opts->{'release'} ) {
         $build_type = "Release";
-        print "build_type: $build_type\n";
+        print "Build Type Set To: $build_type\n";
     }
     if ( $opts->{'debug'} ) {
         $build_type = "Debug";
-        print "build_type: $build_type\n";
+        print "Build Type Set To: $build_type\n";
     }
     if ( $opts->{'build'} ) {
 
