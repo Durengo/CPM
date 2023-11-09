@@ -27,12 +27,13 @@ my $build_type              = "";
 sub option_spec {
     [ 'help|h' => 'Display help.' ],
 
-      [ 'cache|ca'               => 'Display the contents of the cache.' ],
-      [ 'cache_edit|cae'         => 'Edit the cache.' ],
-      [ 'cache_get|cag=s'        => 'Get a value from the cache by key.' ],
-      [ 'project_generate|pg=s@' => 'Generate CMake project.' ],
-      [ 'release|r'              => 'Prepares script to work with release.' ],
-      [ 'debug|d'                => 'Prepares script to work with debug.' ],
+      [ 'cache|ca'        => 'Display the contents of the cache.' ],
+      [ 'cache_edit|cae'  => 'Edit the cache.' ],
+      [ 'cache_get|cag=s' => 'Get a value from the cache by key.' ],
+      [ 'release|r'       => 'Prepares script to work with release.' ],
+      [ 'debug|d'         => 'Prepares script to work with debug.' ],
+      [ 'project_generate|pg=s' =>
+          'Generate CMake project. Must provide -r or -d option beforehand.' ],
       [ 'build|b' =>
 'Builds the generated CMake Project. Must provide -r or -d option beforehand.'
       ],
@@ -93,14 +94,6 @@ sub run {
         $arg1 = $opts->{'cache_get'};
         execute_build_py( '--cache-get', $arg1 );
     }
-    if ( $opts->{'project_generate'} ) {
-        my @args = @{ $opts->{'project_generate'} };
-        print "args: @args\n";
-        $arg1 = $args[0];
-        $arg2 = $args[1];
-        $build_environemnt_cache->put_pair( 'last_used_system_type', $arg1 );
-        execute_build_py( '--project-generate', $arg1, $arg2 );
-    }
     if ( $opts->{'clean'} ) {
         clean_both_dirs();
     }
@@ -114,6 +107,14 @@ sub run {
     if ( $opts->{'debug'} ) {
         $build_type = "Debug";
         print "Build Type Set To: $build_type\n";
+    }
+    if ( $opts->{'project_generate'} ) {
+        if ( $build_type eq "" ) {
+            die "Must provide -r or -d option beforehand.\n";
+        }
+        $arg1 = $opts->{'project_generate'};
+        $build_environemnt_cache->put_pair( 'last_used_system_type', $arg1 );
+        execute_build_py( '--project-generate', $arg1, $build_type );
     }
     if ( $opts->{'build'} ) {
 
