@@ -184,7 +184,6 @@ sub retrieve_install_json {
     my $prerequisites_ref = $installs_cache->get_pair('prerequisites');
     CPMLog::trace("Detected Prerequisites: ");
     print join( ", ", @{$prerequisites_ref} ) . "\n";
-    CPMLog::trace("");
 
     my $packages_ref = $installs_cache->get_pair('packages');
     CPMLog::trace("Detected Packages: ");
