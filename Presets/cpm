@@ -1,6 +1,7 @@
 #!/usr/bin/perl
 use strict;
 use warnings;
+
 # use lib this;
 # BEGIN STMT;
 
@@ -25,6 +26,7 @@ sub command_map {
         'generate' => 'CPM::Command::Generate',
         'setup'    => 'CPM::Command::Setup',
         'build'    => 'CPM::Command::Build',
+        'venv'     => 'CPM::Command::Venv',
     )
 }
 
@@ -33,6 +35,7 @@ sub command_alias {
       'g' => 'generate',
       's' => 'setup',
       'b' => 'build',
+      'v' => 'venv',
       ;
 }
 
@@ -52,6 +55,9 @@ sub usage_text {
     \t# Help - Build
     \t<h|help> build
 
+    \t# Help - Venv
+    \t<h|help> venv
+
     \t# Generate
     \t<g|generate> <name> <path>
 
@@ -60,6 +66,9 @@ sub usage_text {
 
     \t# Build
     \t<b|build> <name> <path>
+
+    \t# Venv
+    \t<b|build> <name>
     
     Options:
       -h, --help\tHow to use this application

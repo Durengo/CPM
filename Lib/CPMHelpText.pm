@@ -98,4 +98,23 @@ sub generate_help {
 };
 }
 
+sub venv_help {
+    return qq{
+    Usage: $0 venv <verb> <args> ...
+
+    \t# Initializes the venv environment.
+    \t<i|initialize>
+
+    \t# Deinitializes the venv environment.
+    \t<d|deinitialize>
+
+    \t# Deinitializes then initializes the venv environment.
+    \t<r|reinitialize>
+
+    \t# Force clean the venv environment. Use this if reinitialize or deinitializes fail.
+    \t<fc|force_clean>
+
+};
+}
+
 1;
