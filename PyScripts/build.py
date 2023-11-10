@@ -324,6 +324,8 @@ def install_cmake_project():
 def arg_install_cmake_project(l_build_type):
     prepare_cmake_variables()
     # Run the install command to copy the built binaries to the custom location
+    path = os.path.join(source_dir, "Install", platform_name, build_type_arg)
+    write_to_cache("last_installation_directory", path)
     install_cmd = [
         "cmake",
         "--install", build_dir,

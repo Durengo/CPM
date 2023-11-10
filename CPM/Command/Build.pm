@@ -16,6 +16,7 @@ use CPMCache;
 use CPMLog;
 use CPMBuildInterface;
 use CPMHelpText;
+use CPMScriptInterface;
 
 my $working_dir             = getcwd();
 my $using_vcpkg_location    = JSON::PP::false;
@@ -39,6 +40,9 @@ sub option_spec {
       ],
       [ 'install|i' =>
           'Installs the build. Must provide -r or -d option beforehand.' ],
+      [ 'symlink|s' =>
+'Creates a symlink to all exes located in the bin. Must provide -r or -d option beforehand. Build must be installed beforehand.'
+      ],
       [ 'clean|c' => 'Cleans the build and install directories.' ],
       [ 'clean_rebuild|cr' =>
 'Cleans the build and install directories and rebuilds. Must provide -r or -d option beforehand.'
@@ -66,6 +70,7 @@ sub run {
     }
 
     CPMBuildInterface::check_build_py();
+    CPMScriptInterface::shell_script_location();
 
     # CPMBuildInterface::clear_build_cache();
 
@@ -129,6 +134,12 @@ sub run {
             die "Must provide -r or -d option beforehand.\n";
         }
         execute_build_py( '--project-install', $build_type );
+    }
+    if ( $opts->{'symlink'} ) {
+        if ( $build_type eq '' ) {
+            die "Must provide -r or -d option beforehand.\n";
+        }
+        symlink_installation();
     }
     if ( $opts->{'clean-rebuild'} ) {
         if ( $build_type eq '' ) {
@@ -310,6 +321,37 @@ sub execute_build_py {
         die "Failed to generate project: $!\n";
     }
 
+}
+
+sub symlink_installation {
+    die "Disabled due to required elevated permissions.\n";
+
+    my $install_dir = "";
+
+    my ( $success, $value ) =
+      $build_options_cache->try_get_pair('last_installation_directory');
+    if ($success) {
+        $install_dir = File::Spec->canonpath("$value");
+    }
+    else {
+        die "Source directory is not set.\n";
+    }
+
+    if ( $install_dir eq "" ) {
+        die "Source directory is empty.\n";
+    }
+
+    # Get all files into a list that are in $install_dir/bin and end with .exe
+    my $bin_path = File::Spec->canonpath("$install_dir\\bin");
+    my @exes     = glob("$bin_path\\*.exe");
+
+    # my $symlink_exe_location = CPMScriptInterface::shell_script_location();
+
+    foreach my $exe (@exes) {
+        my $exe_name = File::Basename::basename($exe);
+        $exe_name =~ s/\.exe$//i;
+        CPMScriptInterface::execute_symlink( $exe_name, $install_dir, $exe );
+    }
 }
 
 sub build_help {

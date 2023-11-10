@@ -70,6 +70,14 @@ sub build_help {
     \t* The project must be built before it can be installed.
     \t* This will overwrite any existing installation (if the project was already installed).
 
+    \t# Creates a symlink to all exes located in the bin. Must provide -r or -d option beforehand. Build must be installed beforehand.
+    \t<s|symlink>
+    \tExample: -r <s|symlink>
+    \tNotes:
+    \t* This will create a symlink to all exes located in the bin directory.
+    \t* The project must be installed before it can be symlinked.
+    \t* This will overwrite any existing symlinks (if the project was already symlinked).
+
     \t# Cleans the build and install directories.
     \t<c|clean>
 
