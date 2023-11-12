@@ -464,7 +464,8 @@ sub check_git {
         }
     }
     else {
-        die "Git is not installed or an error occurred.\n";
+        die
+"Git is not installed or an error occurred. Have you added it to your path?\n";
     }
 }
 
@@ -483,7 +484,8 @@ sub check_cmake {
         }
     }
     else {
-        die "CMake is not installed or an error occurred.\n";
+        die
+"CMake is not installed or an error occurred. Have you added it to your path?\n";
     }
 }
 
@@ -502,7 +504,8 @@ sub check_python {
         }
     }
     else {
-        die "Python is not installed or an error occurred.\n";
+        die
+"Python is not installed or an error occurred. Have you added it to your path?\n";
     }
 }
 
@@ -517,12 +520,29 @@ sub check_cl {
         # print "Compiler Output:\n$cl_output";
     }
     else {
-        die "MSVC compiler is not installed or an error occurred.\n";
+        die
+"MSVC compiler is not installed or an error occurred. Have you added it to your path?\n";
+    }
+}
+
+sub check_doxygen {
+    print("Checking if Doxygen documentation is installed...\n");
+
+    my $doxygen_output = `doxygen --version`;
+
+    if ( $doxygen_output =~ /(\S+)/ ) {
+        my $doxygen_version = $1;
+
+        CPMLog::info("Doxygen is installed. Version: $doxygen_version");
+    }
+    else {
+        die
+"Unable to extract Doxygen version. Have you added it to your path?\n";
     }
 }
 
 sub post_venv {
-    
+
 }
 
 sub install_vcpkg_package {
