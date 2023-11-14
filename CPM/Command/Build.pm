@@ -24,6 +24,7 @@ my $build_environemnt_cache = CPMCache->new();
 my $build_options_cache     = CPMCache->new();
 my $build_installs_cache    = CPMCache->new();
 my $build_type              = "";
+my $using_custom_libs       = JSON::PP::false;
 
 sub option_spec {
     [ 'help|h' => 'Display help.' ],
@@ -72,6 +73,8 @@ sub run {
     CPMBuildInterface::check_build_py();
     CPMScriptInterface::shell_script_location();
 
+    # check_custom_libs();
+
     # CPMBuildInterface::clear_build_cache();
 
     my $arg1;
@@ -119,6 +122,7 @@ sub run {
         }
         $arg1 = $opts->{'project_generate'};
         $build_environemnt_cache->put_pair( 'last_used_system_type', $arg1 );
+        # rebuild_custom_libs( $arg1, $build_type, JSON::PP::false );
         execute_build_py( '--project-generate', $arg1, $build_type );
     }
     if ( $opts->{'build'} ) {
@@ -195,6 +199,7 @@ sub check_build_dir {
         my ( $success2, $value2 ) =
           $build_environemnt_cache->try_get_pair('last_used_system_type');
         if ($success2) {
+            # rebuild_custom_libs( $value2, $build_type, JSON::PP::true );
             execute_build_py( '--project-generate', $value2, $build_type );
         }
         else {
@@ -202,6 +207,32 @@ sub check_build_dir {
         }
     }
 }
+
+# sub check_custom_libs {
+#     my $custom_libs = $build_installs_cache->get_pair('using_custom_libraries');
+
+#     if ( $custom_libs eq JSON::PP::true ) {
+#         $using_custom_libs = JSON::PP::true;
+#     }
+#     else {
+#         $using_custom_libs = JSON::PP::false;
+#     }
+# }
+
+# sub rebuild_custom_libs {
+#     my ( $system_type, $build_type, $spc ) = @_;
+
+#     if ( $using_custom_libs eq JSON::PP::true ) {
+#         # get the array of library names and library relative locations from install cache
+#         # the json looks like this:
+#         # "custom_libraries":[{"name":"","location":""}]
+#         my $custom_libs = $build_installs_cache->get_pair('custom_libraries');
+#         my $custom_libs_json = decode_json($custom_libs);
+#         my $custom_libs_array = $custom_libs_json->{'custom_libraries'};
+#         my $custom_libs_count = scalar @$custom_libs_array;
+
+#     }
+# }
 
 sub clean_build_dir {
     my $build_dir = "";

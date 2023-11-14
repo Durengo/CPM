@@ -185,6 +185,18 @@ sub retrieve_install_json {
     CPMLog::trace("Detected Prerequisites: ");
     print join( ", ", @{$prerequisites_ref} ) . "\n";
 
+    my $using_custom_libraries =
+      $installs_cache->get_pair('using_custom_libraries');
+    if ( $using_custom_libraries eq JSON::PP::true ) {
+        CMPLog::trace("Custom Libraries are enabled.");
+        my $custom_libraries = $installs_cache->get_pair('custom_libraries');
+        CPMLog::trace("Detected Custom Library Initiation: ");
+        print join( ", ", @{$custom_libraries} ) . "\n";
+    }
+    else {
+        CPMLog::trace("Custom Libraries are disabled.");
+    }
+
     my $packages_ref = $installs_cache->get_pair('packages');
     CPMLog::trace("Detected Packages: ");
     foreach my $package ( @{$packages_ref} ) {

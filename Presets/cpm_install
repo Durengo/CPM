@@ -1,1 +1,1 @@
-{"prerequisites":["git","cmake"],"packages":[{"library":"test","triplet":"x64-windows"}],"post_install":[""]}
+{"prerequisites":["git","cmake"],"using_custom_libraries":"false","custom_libraries":[{"name":"","location":""}],"packages":[{"library":"test","triplet":"x64-windows"}],"post_install":[""]}
