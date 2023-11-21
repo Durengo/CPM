@@ -18,13 +18,14 @@ use CPMBuildInterface;
 use CPMHelpText;
 use CPMScriptInterface;
 
-my $working_dir             = getcwd();
-my $using_vcpkg_location    = JSON::PP::false;
-my $build_environemnt_cache = CPMCache->new();
-my $build_options_cache     = CPMCache->new();
-my $build_installs_cache    = CPMCache->new();
-my $build_type              = "";
-my $using_custom_libs       = JSON::PP::false;
+my $working_dir                      = getcwd();
+my $using_vcpkg_location             = JSON::PP::false;
+my $build_environemnt_cache          = CPMCache->new();
+my $build_options_cache              = CPMCache->new();
+my $build_installs_cache             = CPMCache->new();
+my $build_working_dir_installs_cache = CPMCache->new();
+my $build_type                       = "";
+my $using_custom_libs                = JSON::PP::false;
 
 sub option_spec {
     [ 'help|h' => 'Display help.' ],
@@ -63,6 +64,8 @@ sub run {
     $build_environemnt_cache->init_cache( 'env.json', 0 );
     $build_installs_cache->init_cache( 'install.json', 0 );
     $build_options_cache->init_cache( 'options_cache.json', 0 );
+    $build_working_dir_installs_cache->init_cache_from_path(
+        File::Spec->catfile( $working_dir, 'cpm_install.json' ) );
 
     my ( $success, $value ) =
       $build_environemnt_cache->try_get_pair('using_vcpkg_location');
@@ -73,7 +76,7 @@ sub run {
     CPMBuildInterface::check_build_py();
     CPMScriptInterface::shell_script_location();
 
-    # check_custom_libs();
+    check_custom_libs();
 
     # CPMBuildInterface::clear_build_cache();
 
@@ -122,7 +125,7 @@ sub run {
         }
         $arg1 = $opts->{'project_generate'};
         $build_environemnt_cache->put_pair( 'last_used_system_type', $arg1 );
-        # rebuild_custom_libs( $arg1, $build_type, JSON::PP::false );
+        rebuild_custom_libs( $arg1, $build_type, JSON::PP::false );
         execute_build_py( '--project-generate', $arg1, $build_type );
     }
     if ( $opts->{'build'} ) {
@@ -199,7 +202,7 @@ sub check_build_dir {
         my ( $success2, $value2 ) =
           $build_environemnt_cache->try_get_pair('last_used_system_type');
         if ($success2) {
-            # rebuild_custom_libs( $value2, $build_type, JSON::PP::true );
+            rebuild_custom_libs( $value2, $build_type, JSON::PP::true );
             execute_build_py( '--project-generate', $value2, $build_type );
         }
         else {
@@ -208,31 +211,96 @@ sub check_build_dir {
     }
 }
 
-# sub check_custom_libs {
-#     my $custom_libs = $build_installs_cache->get_pair('using_custom_libraries');
+sub check_custom_libs {
+    my $custom_libs =
+      $build_working_dir_installs_cache->get_pair('using_custom_libraries');
 
-#     if ( $custom_libs eq JSON::PP::true ) {
-#         $using_custom_libs = JSON::PP::true;
-#     }
-#     else {
-#         $using_custom_libs = JSON::PP::false;
-#     }
-# }
+    if ($custom_libs) {
+        $using_custom_libs = JSON::PP::true;
+    }
+    else {
+        $using_custom_libs = JSON::PP::false;
+    }
 
-# sub rebuild_custom_libs {
-#     my ( $system_type, $build_type, $spc ) = @_;
+    print "Using Custom Libs: $using_custom_libs\n";
+}
 
-#     if ( $using_custom_libs eq JSON::PP::true ) {
-#         # get the array of library names and library relative locations from install cache
-#         # the json looks like this:
-#         # "custom_libraries":[{"name":"","location":""}]
-#         my $custom_libs = $build_installs_cache->get_pair('custom_libraries');
-#         my $custom_libs_json = decode_json($custom_libs);
-#         my $custom_libs_array = $custom_libs_json->{'custom_libraries'};
-#         my $custom_libs_count = scalar @$custom_libs_array;
+sub rebuild_custom_libs {
+    my ( $system_type, $build_type, $spc ) = @_;
 
-#     }
-# }
+    if ($using_custom_libs) {
+
+# get the array of library names and library relative locations from install cache
+# the json looks like this:
+# "custom_libraries":[{"name":"","location":""}]
+        my $custom_libs =
+          $build_working_dir_installs_cache->get_pair('custom_libraries');
+
+        my $using_provided_vcpkg_location =
+          $build_environemnt_cache->get_pair('using_provided_vcpkg_location');
+
+        foreach my $library ( @{$custom_libs} ) {
+            if ( ref $library eq 'HASH' ) {
+                my $name     = $library->{'name'};
+                my $location = $library->{'location'};
+                print "Library Name: $name, Location: $location\n";
+
+                my $lib_path = get_library_absolute_path($location);
+                my @args     = "\"$lib_path\"";
+
+                # 1. Init cpm in library to it's own location
+                my $cmd =
+                  File::Spec->catfile( $lib_path, 'Tools', 'CPM', 'init.pl' );
+
+                print("Executing: $cmd @args\n");
+
+                my $exit_status = system( $cmd, @args );
+                if ( $exit_status == 0 ) {
+                    CPMLog::info("Successfully executed build.py");
+                }
+                else {
+                    die "Failed to generate project: $!\n";
+                }
+
+                # if ($using_provided_vcpkg_location) {
+
+                #     # 2. Run generation and build at least once
+                #     # 3. Completely clear the build
+                #     if ($spc) {
+
+                #     }
+                #     else {
+
+                #     }
+
+                # }
+                # else {
+                #     if ($spc) {
+
+                #     }
+                #     else {
+
+                #     }
+                # }
+
+            }
+        }
+
+    }
+}
+
+sub get_library_absolute_path {
+    my $check_dir = shift;
+
+    my $absolute_path = File::Spec->canonpath("$working_dir\\$check_dir");
+
+    if ( -d $absolute_path ) {
+        return $absolute_path;
+    }
+    else {
+        die "Directory does not exist: $absolute_path\n";
+    }
+}
 
 sub clean_build_dir {
     my $build_dir = "";
