@@ -26,21 +26,29 @@ my $prerequisites;
 my $packages;
 
 sub option_spec {
-    [ 'no_local_vcpkg|nlv|n' =>
+    (
+        [
+            'no_local_vcpkg|nlv|n' =>
 'Tries to find an existing vcpkg installation otherwise runs the setup without using a local vcpkg installation. Optionally skips package configurations.'
-    ],
-      [ 'vcpkg_location|vl|l=s' =>
+        ],
+        [
+            'vcpkg_location|vl|l=s' =>
 'Runs the setup with the specified vcpkg directory. Optionally skips package configurations.'
-      ],
-      [ 'skip_package_configurations|spc' =>
-          'Skips package configuration when running nlv or lv.' ],
-      [ 'no_deps_check|ndc' =>
+        ],
+        [
+            'skip_package_configurations|spc' =>
+              'Skips package configuration when running nlv or lv.'
+        ],
+        [
+            'no_deps_check|ndc' =>
 'Runs the setup without checking for runtime dependencies (ONLY FOR CI USE).'
-      ],
-      [ 'force_package_install|fpi' =>
+        ],
+        [
+            'force_package_install|fpi' =>
 'Forces vcpkg to install packages again (does not remove any existing packages).'
-      ],
-      [ 'help|h' => 'Display help.' ],;
+        ],
+        [ 'help|h' => 'Display help.' ],
+    )
 }
 
 sub run {

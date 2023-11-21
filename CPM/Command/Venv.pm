@@ -27,14 +27,19 @@ my $options_cache        = CPMCache->new();
 my $PY_VENV_DIR;
 
 sub option_spec {
-    [ 'initialize|i' => 'Initializes the venv environment.' ],
-      [ 'deinitialize|d' => 'Deinitializes the venv environment.' ],
-      [ 'reinitialize|r' =>
-          'deinitializes then initializes the venv environment.' ],
-      [ 'force_clean|fc' =>
+    (
+        [ 'initialize|i'   => 'Initializes the venv environment.' ],
+        [ 'deinitialize|d' => 'Deinitializes the venv environment.' ],
+        [
+            'reinitialize|r' =>
+              'deinitializes then initializes the venv environment.'
+        ],
+        [
+            'force_clean|fc' =>
 'Force clean the venv environment. Use this if reinitialize or deinitializes fail.'
-      ],
-      [ 'help|h' => 'Display help.' ],;
+        ],
+        [ 'help|h' => 'Display help.' ],
+    )
 }
 
 sub run {

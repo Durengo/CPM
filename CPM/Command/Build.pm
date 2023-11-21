@@ -26,33 +26,41 @@ my $build_installs_cache    = CPMCache->new();
 my $build_type              = "";
 
 sub option_spec {
-    [ 'help|h' => 'Display help.' ],
+    (
+        [ 'help|h' => 'Display help.' ],
 
-      [ 'cache|ca'        => 'Display the contents of the cache.' ],
-      [ 'cache_edit|cae'  => 'Edit the cache.' ],
-      [ 'cache_get|cag=s' => 'Get a value from the cache by key.' ],
-      [ 'release|r'       => 'Prepares script to work with release.' ],
-      [ 'debug|d'         => 'Prepares script to work with debug.' ],
-      [ 'project_generate|pg=s' =>
-          'Generate CMake project. Must provide -r or -d option beforehand.' ],
-      [ 'build|b' =>
+        [ 'cache|ca'        => 'Display the contents of the cache.' ],
+        [ 'cache_edit|cae'  => 'Edit the cache.' ],
+        [ 'cache_get|cag=s' => 'Get a value from the cache by key.' ],
+        [ 'release|r'       => 'Prepares script to work with release.' ],
+        [ 'debug|d'         => 'Prepares script to work with debug.' ],
+        [
+            'project_generate|pg=s' =>
+              'Generate CMake project. Must provide -r or -d option beforehand.'
+        ],
+        [
+            'build|b' =>
 'Builds the generated CMake Project. Must provide -r or -d option beforehand.'
-      ],
-      [ 'install|i' =>
-          'Installs the build. Must provide -r or -d option beforehand.' ],
-      [ 'symlink|s' =>
+        ],
+        [
+            'install|i' =>
+              'Installs the build. Must provide -r or -d option beforehand.'
+        ],
+        [
+            'symlink|s' =>
 'Creates a symlink to all exes located in the bin. Must provide -r or -d option beforehand. Build must be installed beforehand.'
-      ],
-      [ 'clean|c' => 'Cleans the build and install directories.' ],
-      [ 'clean_rebuild|cr' =>
+        ],
+        [ 'clean|c' => 'Cleans the build and install directories.' ],
+        [
+            'clean_rebuild|cr' =>
 'Cleans the build and install directories and rebuilds. Must provide -r or -d option beforehand.'
-      ],
-      [ 'clean_install|ci' =>
+        ],
+        [
+            'clean_install|ci' =>
 'Cleans the build and install directories then rebuilds and reinstalls. Must provide -r or -d option beforehand.'
-      ],
-      [ 'clean_dir|cd=s' => 'Cleans <b>uild or <i>nstall directory.' ],
-
-      ;
+        ],
+        [ 'clean_dir|cd=s' => 'Cleans <b>uild or <i>nstall directory.' ],
+    )
 }
 
 sub run {
