@@ -187,11 +187,19 @@ sub retrieve_install_json {
 
     my $using_custom_libraries =
       $installs_cache->get_pair('using_custom_libraries');
-    if ( $using_custom_libraries eq JSON::PP::true ) {
-        CMPLog::trace("Custom Libraries are enabled.");
+    print "Using Custom Libraries: $using_custom_libraries\n";
+    if ($using_custom_libraries) {
+        CPMLog::trace("Custom Libraries are enabled.");
         my $custom_libraries = $installs_cache->get_pair('custom_libraries');
-        CPMLog::trace("Detected Custom Library Initiation: ");
-        print join( ", ", @{$custom_libraries} ) . "\n";
+
+        foreach my $library ( @{$custom_libraries} ) {
+            if ( ref $library eq 'HASH' ) {
+                my $name     = $library->{'name'};
+                my $location = $library->{'location'};
+                print "Library Name: $name, Location: $location\n";
+                check_if_lib_exists($location);
+            }
+        }
     }
     else {
         CPMLog::trace("Custom Libraries are disabled.");
@@ -208,6 +216,19 @@ sub retrieve_install_json {
     print join( ", ", @{$post_install_ref} ) . "\n";
 
     return ( $prerequisites_ref, $packages_ref, $post_install_ref );
+}
+
+sub check_if_lib_exists {
+    my $check_dir = shift;
+
+    my $absolute_path = File::Spec->canonpath("$working_dir\\$check_dir");
+
+    if ( -d $absolute_path ) {
+        return;
+    }
+    else {
+        die "Directory does not exist: $absolute_path\n";
+    }
 }
 
 sub check_vcpkg {
