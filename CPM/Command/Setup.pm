@@ -542,7 +542,8 @@ sub check_doxygen {
 }
 
 sub post_venv {
-
+    print
+"Venv has been detect in post installs. Venv functionality is now enabled in CPM.\n";
 }
 
 sub install_vcpkg_package {

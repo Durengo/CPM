@@ -12,17 +12,12 @@ $app->run();
 package CPM;
 use base qw(CLI::Framework);
 
-# sub command_map {
-#     qw(
-#       hello      CPM::Command::Hello
-#       greet      CPM::Command::Greet
-#     );
-# }
+my $version = "0.0.1";
 
 sub command_map {
     (
-        # 'help' => 'CLI::Framework::Command::Help',
         'help'     => 'CPM::Command::MyHelp',
+        'version'  => 'CPM::Command::Version',
         'generate' => 'CPM::Command::Generate',
         'setup'    => 'CPM::Command::Setup',
         'build'    => 'CPM::Command::Build',
@@ -31,12 +26,14 @@ sub command_map {
 }
 
 sub command_alias {
-    'h'   => 'help',
-      'g' => 'generate',
-      's' => 'setup',
-      'b' => 'build',
-      'v' => 'venv',
-      ;
+    (
+        'h'   => 'help',
+        'v'   => 'version',
+        'g'   => 'generate',
+        's'   => 'setup',
+        'b'   => 'build',
+        'pyv' => 'venv',
+    )
 }
 
 sub usage_text {
@@ -77,11 +74,10 @@ sub usage_text {
 }
 
 sub option_spec {
-    [ 'help|h' => 'show help' ]
+    ( [ 'help|h' => 'show help' ], )
 }
 
-# ...
-
-# my $app = CPM->new();
-
-# CPM->new()->run();
+sub show_version {
+    my $self = shift;
+    return "CPM Version: $version";
+}
