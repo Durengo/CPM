@@ -4,10 +4,9 @@ Cmake Project Manager - automate cmake build commands, generate CMakeLists files
 
 ## Requirements
 
-There are only 2 requirements:
-
-1. [Perl runtime](https://www.perl.org/).
-2. [Python runtime](https://www.python.org/).
+1. [Perl runtime](https://www.perl.org/)
+2. [Python runtime](https://www.python.org/)
+3. [CMake](https://cmake.org/)
 
 There are other dependencies for the program, but those are download and setup whenever you initiate CPM for your project.
 
