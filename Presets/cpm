@@ -65,7 +65,7 @@ sub usage_text {
     \t<b|build> <name> <path>
 
     \t# Venv
-    \t<b|build> <name>
+    \t<pyv|venv> <name>
     
     Options:
       -h, --help\tHow to use this application

@@ -14,11 +14,14 @@ sub setup_help {
     \t# Runs the setup with the specified vcpkg directory. Optionally skips package configurations.
     \t<l|vl|vcpkg-location> [<path/to/vcpkg>] [spc|skip_package_configurations]
 
-    \t# Forces vcpkg to install packages again (does not remove any existing packages).
-    \t<fpi|force_package_install>
+    \t# Skips package configuration when running nlv or lv.
+    \t<spc|skip_package_configurations>
 
     \t# Runs the setup without checking for runtime dependencies (ONLY FOR CI USE).
     \t<ndc|no-deps-check>
+
+    \t# Forces vcpkg to install packages again (does not remove any existing packages).
+    \t<fpi|force_package_install>
 
 };
 }
@@ -30,7 +33,7 @@ sub build_help {
     \t# Displays the help.
     \t<h|help>
 
-    \t# Generate the cache file - options_cache.json
+    \t# Generate the cache file - options_cache.json.
     \t<cg|cache_generate> <vcpkg_location>
 
     \t# Display the contents of the cache.
