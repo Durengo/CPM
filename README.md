@@ -42,7 +42,7 @@ The following will display the list of included modules and how to access them:
 | :--------------: | :---------------------------: |
 |   help (or -h)   |      Displays the help.       |
 | generate (or -g) | Access the generation module. |
-|  setup (or -g)   |   Access the setup module.    |
+|  setup (or -s)   |   Access the setup module.    |
 |  build (or -b)   |   Access the build module.    |
 |       venv       |    Access the venv module.    |
 
