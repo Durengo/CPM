@@ -1,4 +1,8 @@
-# CPM
+# DEPRACATED
+
+THIS README IS CURRENTLY DEPRECATED.
+
+## CPM
 
 Cmake Project Manager - automate cmake build commands, generate CMakeLists files with presets.
 
