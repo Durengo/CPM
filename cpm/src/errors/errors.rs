@@ -2,13 +2,14 @@ use std::process;
 use spdlog::prelude::*;
 
 pub enum RuntimeErrors {
-    // OS related errors
+    // OS related errors 1-1
     NotSupportedOS(Option<String>),
 }
 
 impl RuntimeErrors {
     pub fn error_code(&self) -> i32 {
         match *self {
+            // OS related errors 1-1
             RuntimeErrors::NotSupportedOS(_) => 1,
         }
     }

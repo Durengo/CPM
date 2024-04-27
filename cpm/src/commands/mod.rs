@@ -10,8 +10,7 @@ pub enum Commands {
 }
 
 #[derive(Parser, Debug)]
-pub struct VersionArgs {
-}
+pub struct VersionArgs {}
 
 #[derive(Parser, Debug)]
 pub struct InitArgs {

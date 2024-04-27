@@ -3,6 +3,7 @@ use std::env;
 use spdlog::prelude::*;
 
 use crate::errors::errors::RuntimeErrors;
+use crate::internal::settings::Settings;
 
 mod commands;
 mod internal;
@@ -25,6 +26,8 @@ fn main() {
         "windows" => info!("Running on Windows"),
         _ => RuntimeErrors::NotSupportedOS(Some(env.to_string())).exit(),
     }
+
+    let mut settings = Settings::init("settings.json");
 
     let cli = Cli::parse();
 
