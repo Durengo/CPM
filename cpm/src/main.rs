@@ -1,5 +1,4 @@
 use clap::Parser;
-use std::env;
 use spdlog::prelude::*;
 
 use crate::errors::errors::RuntimeErrors;
@@ -17,17 +16,17 @@ struct Cli {
 }
 
 fn main() {
-    // TODO: Some logic to cache OS to avoid calling it multiple times
-    let env = env::consts::OS;
+    let settings = Settings::init().unwrap();
 
-    match env {
+    // TODO: Some logic to cache OS to avoid calling it multiple times
+    let env = settings.os;
+
+    match env.as_str() {
         "linux" => RuntimeErrors::NotSupportedOS(Some(env.to_string())).exit(),
         "macos" => RuntimeErrors::NotSupportedOS(Some(env.to_string())).exit(),
         "windows" => info!("Running on Windows"),
         _ => RuntimeErrors::NotSupportedOS(Some(env.to_string())).exit(),
     }
-
-    let mut settings = Settings::init("settings.json");
 
     let cli = Cli::parse();
 
