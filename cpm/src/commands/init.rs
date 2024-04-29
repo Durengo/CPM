@@ -1,17 +1,23 @@
-use std::os;
+use spdlog::prelude::*;
 
 use crate::commands::InitArgs;
 use crate::errors::errors::RuntimeErrors;
 use crate::internal::settings::{ self, Settings };
 
 pub fn run(args: InitArgs) {
-    println!("Running the Initialization command with arguments: {:?}", args);
+    trace!("Running the Initialization command with arguments: {:?}", args);
 
-    let _ = main();
+    _ = entry();
 }
 
-fn main() -> std::io::Result<()> {
-    let settings = Settings::load(&Settings::get_settings_path()?)?;
+fn entry() -> std::io::Result<()> {
+    let mut settings = Settings::load(&Settings::get_settings_path()?)?;
+
+    settings.working_dir = Some(std::env::current_dir()?.to_str().unwrap().to_string());
+    settings.save(&Settings::get_settings_path()?)?;
+
+    info!("Working directory: {:?}", settings.working_dir);
+
     os_specific();
 
     Ok(())
@@ -19,4 +25,5 @@ fn main() -> std::io::Result<()> {
 
 fn os_specific() {
     // Retrieve OS from cache
+    debug!("hello");
 }

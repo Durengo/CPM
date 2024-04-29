@@ -14,15 +14,15 @@ pub struct VersionArgs {}
 
 #[derive(Parser, Debug)]
 pub struct InitArgs {
-    #[clap(long, short, action = clap::ArgAction::SetTrue)]
-    pub verbose: bool,
+    // #[clap(required = true)]
+    // pub working_directory: String,
 
-    #[clap(long, short, default_value = "info")]
-    pub log_level: String,
+    // #[clap(long, short, action = clap::ArgAction::SetTrue)]
+    // pub verbose: bool,
 
-    #[clap(long, short, required = true)]
-    pub config: String,
+    // #[clap(long, short, default_value = "info")]
+    // pub log_level: String,
 
-    #[clap(required = true)]
-    pub directory: String,
+    // #[clap(long, short, required = true)]
+    // pub config: String,
 }
