@@ -2,30 +2,35 @@ use std::process;
 use spdlog::prelude::*;
 
 pub enum RuntimeErrors {
-    // OS related errors 1-1
+    // OS related errors 1-9
     NotSupportedOS(Option<String>),
-    // JSON file related errors 2-2
+    WorkingDirSameAsExePath(String, String),
+    // JSON file related errors 10-10
     JSONFileNotFound(Option<String>),
 }
 
 impl RuntimeErrors {
     pub fn error_code(&self) -> i32 {
         match *self {
-            // OS related errors 1-1
+            // OS related errors 1-9
             RuntimeErrors::NotSupportedOS(_) => 1,
-            // JSON file related errors 2-2
+            RuntimeErrors::WorkingDirSameAsExePath(_, _) => 2,
+            // JSON file related errors 10-10
             RuntimeErrors::JSONFileNotFound(_) => 2,
         }
     }
 
     pub fn error_message(&self) -> String {
         match self {
-            // OS related errors 1-1
+            // OS related errors 1-9
             RuntimeErrors::NotSupportedOS(Some(message)) => {
                 format!("The OS is not supported: {}", message)
             }
             RuntimeErrors::NotSupportedOS(None) => "The OS is not supported".to_string(),
-            // JSON file related errors 2-2
+            RuntimeErrors::WorkingDirSameAsExePath(working_dir, exe_path) => {
+                format!("The working directory is the same as the executable directory: {} == {}", working_dir, exe_path)
+            }
+            // JSON file related errors 10-10
             RuntimeErrors::JSONFileNotFound(Some(message)) => {
                 format!("The JSON file was not found: {}", message)
             }

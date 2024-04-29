@@ -17,7 +17,7 @@ struct Cli {
 }
 
 fn main() {
-    let settings = Settings::init().unwrap();
+    let settings = Settings::init(true).unwrap();
 
     let loggers = Loggers::def();
 

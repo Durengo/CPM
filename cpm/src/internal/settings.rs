@@ -1,44 +1,51 @@
 use serde::{ Serialize, Deserialize };
-use std::fs::File;
+use std::fs::{self, File};
 use std::io::{ self, Read, Write };
 use std::path::Path;
 use std::path::PathBuf;
+use spdlog::prelude::*;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Settings {
     pub os: String,
     pub exe_path: String,
-    pub working_dir: Option<String>,
+    pub exe_dir: String,
+    pub working_dir: String,
     pub initialized: bool,
 }
 
 impl Settings {
     pub fn new() -> io::Result<Self> {
-        let exe_path = std::env
-            ::current_exe()?
-            .to_str()
-            .map(|s| s.to_string());
+        // Get the full executable path
+        let exe_path_buf = std::env::current_exe()?;
+        let exe_path = exe_path_buf.to_str().map(|s| s.to_string()).unwrap_or_default();
+
+        // Get the executable directory by finding the parent of the executable path
+        let exe_dir = exe_path_buf.parent()
+            .and_then(|path| path.to_str())
+            .map(|s| s.to_string())
+            .unwrap_or_default();
+
         let working_dir = std::env
             ::current_dir()?
             .to_str()
             .map(|s| s.to_string());
         Ok(Settings {
             os: std::env::consts::OS.to_string(),
-            exe_path: exe_path.unwrap_or_default(),
-            working_dir: None,
+            exe_path: exe_path,
+            exe_dir: exe_dir,
+            working_dir: "".to_string(),
             initialized: false,
             // working_dir: None,
         })
     }
 
-    pub fn init() -> io::Result<Self> {
-        let exe_path_buf = std::env::current_exe()?;
+    pub fn init(force_rewrite: bool) -> io::Result<Self> {
+        let settings_path = Self::get_settings_path()?;
 
-        let exe_dir = exe_path_buf
-            .parent()
-            .ok_or(io::Error::new(io::ErrorKind::NotFound, "Executable directory not found"))?;
-
-        let settings_path = exe_dir.join("settings.json");
+        if force_rewrite && settings_path.exists() {
+            fs::remove_file(&settings_path)?;
+        }
 
         Self::load_or_init(&settings_path)
     }
