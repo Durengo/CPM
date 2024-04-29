@@ -3,6 +3,7 @@ use spdlog::prelude::*;
 
 use crate::errors::errors::RuntimeErrors;
 use crate::internal::settings::Settings;
+use crate::internal::logger::Loggers;
 
 mod commands;
 mod internal;
@@ -17,6 +18,8 @@ struct Cli {
 
 fn main() {
     let settings = Settings::init().unwrap();
+
+    let loggers = Loggers::def();
 
     // TODO: Some logic to cache OS to avoid calling it multiple times
     let env = settings.os;

@@ -257,6 +257,8 @@ version = "0.0.2"
 dependencies = [
  "clap",
  "config",
+ "lazy_static",
+ "once_cell",
  "serde",
  "serde_json",
  "spdlog-rs",
