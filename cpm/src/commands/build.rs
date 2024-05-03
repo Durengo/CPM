@@ -84,9 +84,12 @@ pub fn run(args: BuildArgs) {
         install_cmake_project(&settings, build_type);
     }
 
+    // 'b' is for 'Build' folder and 'i' is for 'Install' folder in the working directory.
+    // Both chars can be used to clean the respective folders.
+    // Example: 'bi' will clean both folders.
+    // Need to parse the string and clean the respective folders.
     if let Some(what_to_clean) = &args.clean_project {
-        info!("Cleaning '{}' in the CMake project", what_to_clean);
-        clean_cmake_project(what_to_clean);
+        clean_cmake_project(&settings, what_to_clean);
     }
 }
 
@@ -269,6 +272,50 @@ fn install_cmake_project(settings: &Settings, build_type: &str) {
     );
 }
 
-fn clean_cmake_project(what_to_clean: &str) {
-    println!("Cleaning up {}", what_to_clean);
+fn clean_cmake_project(settings: &Settings, what_to_clean: &str) {
+    let mut build_dir = false;
+    let mut install_dir = false;
+
+    for c in what_to_clean.chars() {
+        match c {
+            'b' => {
+                build_dir = true;
+            }
+            'i' => {
+                install_dir = true;
+            }
+            _ => {
+                error!("Invalid character '{}' in clean command", c);
+                RuntimeErrors::InvalidCleanCommand(c).exit();
+            }
+        }
+    }
+
+    if build_dir {
+        match std::fs::remove_dir_all(&settings.build_dir) {
+            Ok(_) => {
+                info!("Successfully removed the 'Build' directory.");
+            }
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
+                info!("The build directory does not exist. Skipping this step.");
+            }
+            Err(e) => {
+                error!("Error removing the 'Build' directory: {}", e);
+            }
+        }
+    }
+
+    if install_dir {
+        match std::fs::remove_dir_all(&settings.install_dir) {
+            Ok(_) => {
+                info!("Successfully removed the 'Install' directory.");
+            }
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
+                info!("The install directory does not exist. Skipping this step.");
+            }
+            Err(e) => {
+                error!("Error removing the 'Install' directory: {}", e);
+            }
+        }
+    }
 }

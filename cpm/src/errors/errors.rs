@@ -17,6 +17,7 @@ pub enum RuntimeErrors {
     ToolchainNotFound(String),
     BuildTypeNotSet,
     BuildTypeBothSet,
+    InvalidCleanCommand(char),
     // Not implemented 1000-1005
     NotImplemented,
 }
@@ -39,6 +40,7 @@ impl RuntimeErrors {
             RuntimeErrors::ToolchainNotFound(_) => 33,
             RuntimeErrors::BuildTypeNotSet => 34,
             RuntimeErrors::BuildTypeBothSet => 35,
+            RuntimeErrors::InvalidCleanCommand(_) => 36,
             // Not implemented 1000-1005
             RuntimeErrors::NotImplemented => 1000,
         }
@@ -83,6 +85,9 @@ impl RuntimeErrors {
             }
             RuntimeErrors::BuildTypeNotSet => "The build type was not set".to_string(),
             RuntimeErrors::BuildTypeBothSet => "Both debug and release build types set".to_string(),
+            RuntimeErrors::InvalidCleanCommand(command) => {
+                format!("Invalid clean command: {}", command)
+            }
             // Not implemented 1000-1005
             RuntimeErrors::NotImplemented => "This feature is not implemented".to_string(),
         }
