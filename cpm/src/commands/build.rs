@@ -32,7 +32,7 @@ pub fn run(args: BuildArgs) {
 
     if let Some(toolchain_path) = &args.toolchain {
         settings.toolchain_path = toolchain_path.to_string();
-        // info!("Settings: {:?}", settings);
+        check_toolchain(&mut settings);
     }
 
     if let Some(generate_args) = &args.generate_project {
@@ -62,10 +62,58 @@ pub fn run(args: BuildArgs) {
     }
 }
 
+fn check_toolchain(settings: &mut Settings) {
+    // Run through a match of know toolchains and find their appropriate .cmake file.
+    // Current list of know toolchains:
+    // - VCPKG
+    if !settings.toolchain_path.is_empty() {
+        // Normalize the path to use consistent path separators
+        let normalized_path = normalize_path_separator(&settings.toolchain_path);
+
+        let toolchain_path = Path::new(&normalized_path);
+        let toolchain_root = toolchain_path
+            .file_name()
+            .map(|name| name.to_string_lossy())
+            .unwrap_or_default();
+
+        debug!("Toolchain root: {}", toolchain_root);
+
+        match toolchain_root.as_ref() {
+            "vcpkg" => {
+                let vcpkg_cmake_path =
+                    // Use backslashes for consistency in Windows
+                    format!("{}\\scripts\\buildsystems\\vcpkg.cmake", normalized_path);
+                if Path::new(&vcpkg_cmake_path).exists() {
+                    info!("Detected VCPKG CMake toolchain file: {}", vcpkg_cmake_path);
+                    settings.vcpkg_path = vcpkg_cmake_path;
+                    settings.save_default();
+                } else {
+                    error!("VCPKG CMake toolchain file not found at: {}", vcpkg_cmake_path);
+                    RuntimeErrors::ToolchainNotFound("VCPKG".to_string()).exit();
+                }
+            }
+            _ => {
+                error!("Toolchain '{}' not found", toolchain_root);
+                RuntimeErrors::ToolchainNotFound(toolchain_root.to_string()).exit();
+            }
+        }
+    }
+}
+
+fn normalize_path_separator(path: &str) -> String {
+    if cfg!(target_os = "windows") {
+        // Convert all forward slashes to backslashes on Windows
+        path.replace("/", "\\")
+    } else {
+        // On non-Windows systems, just return the original
+        path.to_string()
+    }
+}
+
 fn generate_cmake_project(settings: &mut Settings, system_type: &str, build_type: &str) {
     let source_dir = settings.working_dir.clone();
     let build_dir = settings.build_dir.clone();
-    let mut toolchain_path = settings.toolchain_path.clone();
+    let toolchain_path = settings.vcpkg_path.clone();
 
     // If system_type is "nt/msvc", then the toolchain path must be set.
     if system_type == "nt/msvc" && toolchain_path.is_empty() {
@@ -77,14 +125,15 @@ fn generate_cmake_project(settings: &mut Settings, system_type: &str, build_type
 
     // Prepare the presets
     // Match system type string
-    let mut preset = generate_preset(&system_type, &source_dir, &build_dir, &toolchain_path);
+    let preset = generate_preset(&system_type, &source_dir, &build_dir, &toolchain_path);
 
     // Cache system and build type and the last command.
     settings.cmake_system_type = system_type.to_string();
     settings.cmake_build_type = build_type.to_string();
-    settings.last_cmake_configuration_command = preset;
+    settings.last_cmake_configuration_command = preset.clone();
+    settings.save_default();
 
-    cmd::execute();
+    cmd::execute(preset);
 
     debug!("Settings: {:?}", settings);
 }
@@ -94,49 +143,49 @@ fn generate_preset(
     source_dir: &str,
     build_dir: &str,
     toolchain_path: &str
-) -> String {
+) -> Vec<String> {
     match system_type {
         "nt/msvc" => {
             vec![
-                "cmake",
-                "-S",
-                source_dir,
-                "-B",
-                build_dir,
-                "-G",
-                "Visual Studio 17 2022",
-                &format!("-DCMAKE_TOOLCHAIN_FILE={}", toolchain_path)
-            ].join(" ")
+                "cmake".to_string(),
+                "-S".to_string(),
+                source_dir.to_string(),
+                "-B".to_string(),
+                build_dir.to_string(),
+                "-G".to_string(),
+                "Visual Studio 17 2022".to_string(),
+                format!("-DCMAKE_TOOLCHAIN_FILE={}", toolchain_path)
+            ]
         }
         "unix/clang" => {
             vec![
-                "cmake",
-                "-S",
-                source_dir,
-                "-B",
-                build_dir,
-                "-G",
-                "Ninja",
-                "-DCMAKE_C_COMPILER=clang",
-                "-DCMAKE_CXX_COMPILER=clang++"
-            ].join(" ")
+                "cmake".to_string(),
+                "-S".to_string(),
+                source_dir.to_string(),
+                "-B".to_string(),
+                build_dir.to_string(),
+                "-G".to_string(),
+                "Ninja".to_string(),
+                "-DCMAKE_C_COMPILER=clang".to_string(),
+                "-DCMAKE_CXX_COMPILER=clang++".to_string()
+            ]
         }
         "unix/gcc" => {
             vec![
-                "cmake",
-                "-S",
-                source_dir,
-                "-B",
-                build_dir,
-                "-G",
-                "Ninja",
-                "-DCMAKE_C_COMPILER=gcc",
-                "-DCMAKE_CXX_COMPILER=g++"
-            ].join(" ")
+                "cmake".to_string(),
+                "-S".to_string(),
+                source_dir.to_string(),
+                "-B".to_string(),
+                build_dir.to_string(),
+                "-G".to_string(),
+                "Ninja".to_string(),
+                "-DCMAKE_C_COMPILER=gcc".to_string(),
+                "-DCMAKE_CXX_COMPILER=g++".to_string()
+            ]
         }
         _ => {
             eprintln!("Invalid system type: {}", system_type);
-            String::new() // Return an empty string if the system type is not recognized
+            vec![]
         }
     }
 }

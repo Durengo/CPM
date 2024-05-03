@@ -10,9 +10,11 @@ pub enum RuntimeErrors {
     // Logic related errors 21-30
     NoInitFlagSet,
     NotInitialized,
+    NoCommandsProvided,
     // Setup Command related errors 31-40
     GenerateProjectInvalidSystemType(Option<String>),
     GenerateProjectNtMsvcNoToolchain,
+    ToolchainNotFound(String),
     // Not implemented 1000-1005
     NotImplemented,
 }
@@ -28,9 +30,11 @@ impl RuntimeErrors {
             // Logic related errors 21-30
             RuntimeErrors::NoInitFlagSet => 21,
             RuntimeErrors::NotInitialized => 22,
+            RuntimeErrors::NoCommandsProvided => 23,
             // Setup Command related errors 31-40
             RuntimeErrors::GenerateProjectInvalidSystemType(_) => 31,
             RuntimeErrors::GenerateProjectNtMsvcNoToolchain => 32,
+            RuntimeErrors::ToolchainNotFound(_) => 33,
             // Not implemented 1000-1005
             RuntimeErrors::NotImplemented => 1000,
         }
@@ -59,6 +63,7 @@ impl RuntimeErrors {
             RuntimeErrors::NoInitFlagSet =>
                 "The no-init flag was set. Do not run 'init' from entrypoint".to_string(),
             RuntimeErrors::NotInitialized => "The settings are not initialized".to_string(),
+            RuntimeErrors::NoCommandsProvided => "No commands were provided".to_string(),
             // Setup Command related errors 31-40
             RuntimeErrors::GenerateProjectInvalidSystemType(Some(system_type)) => {
                 format!("The system type '{}' is invalid", system_type)
@@ -68,6 +73,9 @@ impl RuntimeErrors {
             }
             RuntimeErrors::GenerateProjectNtMsvcNoToolchain => {
                 "The system type 'nt/msvc' requires a toolchain path".to_string()
+            }
+            RuntimeErrors::ToolchainNotFound(toolchain) => {
+                format!("Toolchain '{}' not found", toolchain)
             }
             // Not implemented 1000-1005
             RuntimeErrors::NotImplemented => "This feature is not implemented".to_string(),

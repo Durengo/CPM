@@ -20,10 +20,13 @@ pub struct Settings {
     pub build_dir: String,
     pub install_dir: String,
     pub toolchain_path: String,
+    // WINDOWS ONLY - VCPKG CMAKE TOOLCHAIN
+    // <toolchain_path>/scripts/buildsystems/vcpkg.cmake
+    pub vcpkg_path: String,
     pub cmake_system_type: String,
     pub cmake_build_type: String,
     // Cached commands
-    pub last_cmake_configuration_command: String,
+    pub last_cmake_configuration_command: Vec<String>,
 }
 
 impl Settings {
@@ -59,10 +62,13 @@ impl Settings {
             build_dir: "".to_string(),
             install_dir: "".to_string(),
             toolchain_path: "".to_string(),
+            // WINDOWS ONLY - VCPKG CMAKE TOOLCHAIN
+            // <toolchain_path>/scripts/buildsystems/vcpkg.cmake
+            vcpkg_path: "".to_string(),
             cmake_system_type: "".to_string(),
             cmake_build_type: "".to_string(),
             // Cached commands
-            last_cmake_configuration_command: "".to_string(),
+            last_cmake_configuration_command: vec![],
         })
     }
 
