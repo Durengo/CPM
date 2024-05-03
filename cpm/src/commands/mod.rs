@@ -33,4 +33,65 @@ pub struct InitArgs {
 }
 
 #[derive(Parser, Debug)]
-pub struct SetupArgs {}
+pub struct SetupArgs {
+    /// Generate CMake Project
+    /// System types:
+    ///     nt/msvc     ---> Windows, MSVC compiler
+    ///     unix/clang  ---> Unix, Clang compiler
+    ///     unix/gcc    ---> Unix, GCC compiler
+    /// Build types:
+    ///     Debug       ---> Debug build
+    ///     Release     ---> Release build
+    #[clap(
+        required = false,
+        long,
+        short,
+        num_args(2),
+        value_names = &["SYSTEM_TYPE", "BUILD_TYPE"],
+        verbatim_doc_comment
+    )]
+    pub generate_project: Option<Vec<String>>,
+
+    /// Build CMake Project
+    /// CMAKE_BUILD_TYPE:
+    /// (Mapped by project-generate system type)
+    ///     nt/msvc
+    ///     unix/clang
+    ///     unix/gcc
+    #[clap(
+        required = false,
+        long,
+        short,
+        value_names = &["CMAKE_BUILD_TYPE"],
+        verbatim_doc_comment
+    )]
+    pub build_project: Option<String>,
+
+    /// Install CMake Project
+    /// CMAKE_INSTALL_TYPE:
+    /// (Mapped by project-generate build type)
+    ///     Debug
+    ///     Release
+    #[clap(
+        required = false,
+        long,
+        short,
+        value_names = &["CMAKE_INSTALL_TYPE"],
+        verbatim_doc_comment
+    )]
+    pub install_project: Option<String>,
+
+    /// Clean CMake Project
+    /// WHAT_TO_CLEAN:
+    /// (Combine characters to clean multiple things)
+    ///     b   ---> Build directory
+    ///     i   ---> Install directory
+    #[clap(
+        required = false,
+        long,
+        short,
+        value_names = &["WHAT_TO_CLEAN"],
+        verbatim_doc_comment
+    )]
+    pub clean_project: Option<String>,
+}
