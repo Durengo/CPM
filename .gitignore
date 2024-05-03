@@ -3,3 +3,5 @@ cpm/target
 cpm/*.json
 cpm/*.bat
 !cpm/presets/*.json
+cpm/build
+cpm/install

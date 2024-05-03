@@ -62,6 +62,36 @@ fn os_specific(settings: &mut Settings) {
 fn windows(settings: &mut Settings) {
     get_and_load_preset_config(settings);
     create_entrypoint();
+    set_build_dir(settings);
+    set_install_dir(settings);
+}
+
+fn set_build_dir(settings: &mut Settings) {
+    // Create a build directory in the working directory, check if it exists first, then save the path to the settings file.
+    let build_dir = Path::new(&settings.working_dir).join("build");
+    settings.build_dir = build_dir.to_str().unwrap().to_string();
+    // Create the build directory. If it already exists, it will just skip this step.
+    std::fs::create_dir(&settings.build_dir).unwrap_or_else(|e| {
+        if e.kind() == std::io::ErrorKind::AlreadyExists {
+            debug!("The build directory already exists. Skipping this step.");
+        } else {
+            error!("Error creating the build directory: {}", e);
+        }
+    });
+}
+
+fn set_install_dir(settings: &mut Settings) {
+    // Create an install directory in the working directory, check if it exists first, then save the path to the settings file.
+    let install_dir = Path::new(&settings.working_dir).join("install");
+    settings.install_dir = install_dir.to_str().unwrap().to_string();
+    // Create the install directory
+    std::fs::create_dir(&settings.install_dir).unwrap_or_else(|e| {
+        if e.kind() == std::io::ErrorKind::AlreadyExists {
+            debug!("The install directory already exists. Skipping this step.");
+        } else {
+            error!("Error creating the install directory: {}", e);
+        }
+    });
 }
 
 fn create_entrypoint() {
