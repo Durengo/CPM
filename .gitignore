@@ -8,3 +8,4 @@ cpm/target
 cpm/test/manual/*
 !cpm/test/manual/CMakelists.txt
 !cpm/test/manual/main.cpp
+!cpm/test/manual/QUICK.md
