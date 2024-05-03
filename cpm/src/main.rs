@@ -51,6 +51,7 @@ fn main() {
                 commands::build::run(add_args);
             }
         }
+        Some(commands::Commands::Cache(add_args)) => commands::cache::run(add_args),
         None => {
             if let Err(e) = Cli::command().print_help() {
                 eprintln!("Failed to print help information: {}", e);

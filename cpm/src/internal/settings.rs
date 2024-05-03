@@ -118,4 +118,92 @@ impl Settings {
             .ok_or(io::Error::new(io::ErrorKind::NotFound, "Executable directory not found"))?;
         Ok(dir.join("settings.json"))
     }
+
+    pub fn get_value(&self, key: &str) -> Option<String> {
+        match key {
+            "os" => Some(self.os.clone()),
+            "os_release" => Some(self.os_release.clone()),
+            "os_version" => Some(self.os_version.clone()),
+            "exe_path" => Some(self.exe_path.clone()),
+            "exe_dir" => Some(self.exe_dir.clone()),
+            "working_dir" => Some(self.working_dir.clone()),
+            "install_json_path" => Some(self.install_json_path.clone()),
+            "build_dir" => Some(self.build_dir.clone()),
+            "install_dir" => Some(self.install_dir.clone()),
+            "toolchain_path" => Some(self.toolchain_path.clone()),
+            "vcpkg_path" => Some(self.vcpkg_path.clone()),
+            "cmake_system_type" => Some(self.cmake_system_type.clone()),
+            "cmake_build_type" => Some(self.cmake_build_type.clone()),
+            _ => None,
+        }
+    }
+
+    pub fn set_value(&mut self, key: &str, value: String) -> Result<(), String> {
+        match key {
+            "os" => {
+                self.os = value;
+            }
+            "os_release" => {
+                self.os_release = value;
+            }
+            "os_version" => {
+                self.os_version = value;
+            }
+            "exe_path" => {
+                self.exe_path = value;
+            }
+            "exe_dir" => {
+                self.exe_dir = value;
+            }
+            "working_dir" => {
+                self.working_dir = value;
+            }
+            "install_json_path" => {
+                self.install_json_path = value;
+            }
+            "build_dir" => {
+                self.build_dir = value;
+            }
+            "install_dir" => {
+                self.install_dir = value;
+            }
+            "toolchain_path" => {
+                self.toolchain_path = value;
+            }
+            "vcpkg_path" => {
+                self.vcpkg_path = value;
+            }
+            "cmake_system_type" => {
+                self.cmake_system_type = value;
+            }
+            "cmake_build_type" => {
+                self.cmake_build_type = value;
+            }
+            _ => {
+                return Err("Key not found".to_string());
+            }
+        }
+
+        self.save_default();
+        Ok(())
+    }
+
+    pub fn contains_key(&self, key: &str) -> bool {
+        match key {
+            | "os"
+            | "os_release"
+            | "os_version"
+            | "exe_path"
+            | "exe_dir"
+            | "working_dir"
+            | "install_json_path"
+            | "build_dir"
+            | "install_dir"
+            | "toolchain_path"
+            | "vcpkg_path"
+            | "cmake_system_type"
+            | "cmake_build_type" => true,
+            _ => false,
+        }
+    }
 }

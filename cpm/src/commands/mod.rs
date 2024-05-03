@@ -3,6 +3,7 @@ use clap::Parser;
 pub mod version;
 pub mod init;
 pub mod build;
+pub mod cache;
 
 #[derive(Parser)]
 pub enum Commands {
@@ -12,6 +13,8 @@ pub enum Commands {
     Init(InitArgs),
     /// Build CPM in the current directory
     Build(BuildArgs),
+    /// Manage CPM Cache
+    Cache(CacheArgs),
 }
 
 #[derive(Parser, Debug)]
@@ -35,13 +38,7 @@ pub struct InitArgs {
 #[derive(Parser, Debug)]
 pub struct BuildArgs {
     /// Toolchain path. Must be set to root directory of the toolchain.
-    #[clap(
-        required = false,
-        long,
-        short,
-        value_names = &["TOOLCHAIN-PATH"],
-        verbatim_doc_comment
-    )]
+    #[clap(required = false, long, short, value_names = &["TOOLCHAIN-PATH"], verbatim_doc_comment)]
     pub toolchain: Option<String>,
     /// Generate CMake Project
     /// System types:
@@ -95,12 +92,37 @@ pub struct BuildArgs {
     /// (Combine characters to clean multiple things)
     ///     b   ---> Build directory
     ///     i   ---> Install directory
+    #[clap(required = false, long, short, value_names = &["WHAT_TO_CLEAN"], verbatim_doc_comment)]
+    pub clean_project: Option<String>,
+}
+
+#[derive(Parser, Debug)]
+pub struct CacheArgs {
+    /// Print the cache
+    /// If a key is provided, only that key will be printed
+    /// If no key is provided, all keys will be printed
     #[clap(
         required = false,
         long,
         short,
-        value_names = &["WHAT_TO_CLEAN"],
+        action = clap::ArgAction::Set,
+        value_names = &["KEY"],
+        verbatim_doc_comment,
+        value_parser
+    )]
+    pub print_cache: Option<Option<String>>,
+    /// Change a cache value
+    #[clap(
+        required = false,
+        long,
+        short,
+        num_args(2),
+        value_names = &["KEY", "VALUE"],
         verbatim_doc_comment
     )]
-    pub clean_project: Option<String>,
+    pub edit_cache_key: Option<Vec<String>>,
+    /// Open the cache file in the default editor
+    #[clap(required = false, long, short, action = clap::ArgAction::SetTrue, verbatim_doc_comment)]
+    // No value needed
+    pub open_cache: bool,
 }
