@@ -29,16 +29,14 @@ pub fn run(args: SetupArgs) {
         }
     };
 
-    info!("Working directory: {:?}", settings.working_dir);
-
     if let Some(toolchain_path) = &args.toolchain {
         settings.toolchain_path = toolchain_path.to_string();
-        info!("Settings: {:?}", settings);
+        // info!("Settings: {:?}", settings);
     }
 
     if let Some(generate_args) = &args.generate_project {
         if generate_args.len() == 2 {
-            println!(
+            info!(
                 "Generating CMake project for system type '{}' with build type '{}'",
                 generate_args[0],
                 generate_args[1]
@@ -48,23 +46,22 @@ pub fn run(args: SetupArgs) {
     }
 
     if let Some(build_type) = &args.build_project {
-        println!("Building CMake project with build type '{}'", build_type);
+        info!("Building CMake project with build type '{}'", build_type);
         build_cmake_project(build_type);
     }
 
     if let Some(install_type) = &args.install_project {
-        println!("Installing CMake project with install type '{}'", install_type);
+        info!("Installing CMake project with install type '{}'", install_type);
         install_cmake_project(install_type);
     }
 
     if let Some(what_to_clean) = &args.clean_project {
-        println!("Cleaning '{}' in the CMake project", what_to_clean);
+        info!("Cleaning '{}' in the CMake project", what_to_clean);
         clean_cmake_project(what_to_clean);
     }
 }
 
 fn generate_cmake_project(settings: &mut Settings, system_type: &str, build_type: &str) {
-    println!("Generating project for {} with {}", system_type, build_type);
     let source_dir = settings.working_dir.clone();
     let build_dir = settings.build_dir.clone();
     let mut toolchain_path = settings.toolchain_path.clone();
@@ -86,7 +83,7 @@ fn generate_cmake_project(settings: &mut Settings, system_type: &str, build_type
     settings.cmake_build_type = build_type.to_string();
     settings.last_cmake_configuration_command = preset;
 
-    info!("Settings: {:?}", settings);
+    debug!("Settings: {:?}", settings);
 }
 
 fn generate_preset(
