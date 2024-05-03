@@ -58,20 +58,27 @@ pub struct BuildArgs {
     )]
     pub generate_project: Option<Vec<String>>,
 
-    /// Build CMake Project
-    /// CMAKE_BUILD_TYPE:
-    /// (Mapped by project-generate system type)
-    ///     nt/msvc
-    ///     unix/clang
-    ///     unix/gcc
-    #[clap(
-        required = false,
-        long,
-        short,
-        value_names = &["CMAKE_BUILD_TYPE"],
-        verbatim_doc_comment
-    )]
-    pub build_project: Option<String>,
+    /// Sets Build Type to Debug.
+    /// Must be set to either Debug or Release. Required shorthand for other commands.
+    /// Build types:
+    /// (Must mirror project-generate build types)
+    ///     Debug       ---> Debug build
+    ///     Release     ---> Release build
+    #[clap(required = false, long, short, action = clap::ArgAction::SetTrue, verbatim_doc_comment)]
+    pub debug_build_type: bool,
+
+    /// Sets Build Type to Release.
+    /// Must be set to either Debug or Release. Required shorthand for other commands.
+    /// Build types:
+    /// (Must mirror project-generate build types)
+    ///     Debug       ---> Debug build
+    ///     Release     ---> Release build
+    #[clap(required = false, long, short, action = clap::ArgAction::SetTrue, verbatim_doc_comment)]
+    pub release_build_type: bool,
+
+    /// Build CMake Project. Automatically uses CMAKE_BUILD_TYPE. Will not run without a build type set flag.
+    #[clap(required = false, long, short, action = clap::ArgAction::SetTrue, verbatim_doc_comment)]
+    pub build_project: bool,
 
     /// Install CMake Project
     /// CMAKE_INSTALL_TYPE:

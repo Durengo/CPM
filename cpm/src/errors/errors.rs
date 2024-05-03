@@ -15,6 +15,8 @@ pub enum RuntimeErrors {
     GenerateProjectInvalidSystemType(Option<String>),
     GenerateProjectNtMsvcNoToolchain,
     ToolchainNotFound(String),
+    BuildTypeNotSet,
+    BuildTypeBothSet,
     // Not implemented 1000-1005
     NotImplemented,
 }
@@ -35,6 +37,8 @@ impl RuntimeErrors {
             RuntimeErrors::GenerateProjectInvalidSystemType(_) => 31,
             RuntimeErrors::GenerateProjectNtMsvcNoToolchain => 32,
             RuntimeErrors::ToolchainNotFound(_) => 33,
+            RuntimeErrors::BuildTypeNotSet => 34,
+            RuntimeErrors::BuildTypeBothSet => 35,
             // Not implemented 1000-1005
             RuntimeErrors::NotImplemented => 1000,
         }
@@ -77,6 +81,8 @@ impl RuntimeErrors {
             RuntimeErrors::ToolchainNotFound(toolchain) => {
                 format!("Toolchain '{}' not found", toolchain)
             }
+            RuntimeErrors::BuildTypeNotSet => "The build type was not set".to_string(),
+            RuntimeErrors::BuildTypeBothSet => "Both debug and release build types set".to_string(),
             // Not implemented 1000-1005
             RuntimeErrors::NotImplemented => "This feature is not implemented".to_string(),
         }

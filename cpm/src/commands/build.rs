@@ -46,8 +46,23 @@ pub fn run(args: BuildArgs) {
         }
     }
 
-    if let Some(build_type) = &args.build_project {
-        info!("Building CMake project with build type '{}'", build_type);
+    if args.build_project {
+        // If none are set, throw an error
+        if !(args.debug_build_type || args.release_build_type) {
+            error!(
+                "Build type not set. Use 'build --set-build-type <type>' to set the build type."
+            );
+            RuntimeErrors::BuildTypeNotSet.exit();
+        }
+        // If both are set, throw an error
+        if args.debug_build_type && args.release_build_type {
+            error!("Both debug and release build types set. Use only one.");
+            RuntimeErrors::BuildTypeBothSet.exit();
+        }
+
+        // Depending on build type set string variable as "Debug" or "Release"
+        let build_type = if args.debug_build_type { "Debug" } else { "Release" };
+
         build_cmake_project(build_type);
     }
 
