@@ -77,19 +77,9 @@ pub struct BuildArgs {
     #[clap(required = false, long, short, action = clap::ArgAction::SetTrue, verbatim_doc_comment)]
     pub build_project: bool,
 
-    /// Install CMake Project
-    /// CMAKE_INSTALL_TYPE:
-    /// (Mapped by project-generate build type)
-    ///     Debug
-    ///     Release
-    #[clap(
-        required = false,
-        long,
-        short,
-        value_names = &["CMAKE_INSTALL_TYPE"],
-        verbatim_doc_comment
-    )]
-    pub install_project: Option<String>,
+    /// Install CMake Project. Automatically uses CMAKE_BUILD_TYPE. Will not run without a build type set flag.
+    #[clap(required = false, long, short, action = clap::ArgAction::SetTrue, verbatim_doc_comment)]
+    pub install_project: bool,
 
     /// Clean CMake Project
     /// WHAT_TO_CLEAN:

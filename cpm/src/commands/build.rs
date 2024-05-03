@@ -38,7 +38,13 @@ pub fn run(args: BuildArgs) {
     if let Some(generate_args) = &args.generate_project {
         check_build_type(&args);
 
-        let build_type = if args.debug_build_type { "Debug" } else { "Release" };
+        let build_type = if args.debug_build_type {
+            info!("Build Type: Debug");
+            "Debug"
+        } else {
+            info!("Build Type: Release");
+            "Release"
+        };
 
         info!(
             "Generating CMake project for system type '{}' with build type '{}'",
@@ -52,14 +58,30 @@ pub fn run(args: BuildArgs) {
         check_build_type(&args);
 
         // Depending on build type set string variable as "Debug" or "Release"
-        let build_type = if args.debug_build_type { "Debug" } else { "Release" };
+        let build_type = if args.debug_build_type {
+            info!("Build Type: Debug");
+            "Debug"
+        } else {
+            info!("Build Type: Release");
+            "Release"
+        };
 
-        build_cmake_project(build_type);
+        build_cmake_project(&settings, build_type);
     }
 
-    if let Some(install_type) = &args.install_project {
-        info!("Installing CMake project with install type '{}'", install_type);
-        install_cmake_project(install_type);
+    if args.install_project {
+        check_build_type(&args);
+
+        // Depending on build type set string variable as "Debug" or "Release"
+        let build_type = if args.debug_build_type {
+            info!("Build Type: Debug");
+            "Debug"
+        } else {
+            info!("Build Type: Release");
+            "Release"
+        };
+
+        install_cmake_project(&settings, build_type);
     }
 
     if let Some(what_to_clean) = &args.clean_project {
@@ -209,12 +231,42 @@ fn generate_preset(
     }
 }
 
-fn build_cmake_project(build_type: &str) {
-    println!("Building project with {}", build_type);
+fn build_cmake_project(settings: &Settings, build_type: &str) {
+    let build_dir = settings.build_dir.clone();
+
+    cmd::execute(
+        vec![
+            "cmake".to_string(),
+            "--build".to_string(),
+            build_dir.clone(),
+            "--config".to_string(),
+            build_type.to_string()
+        ]
+    );
 }
 
-fn install_cmake_project(install_type: &str) {
-    println!("Installing project with {}", install_type);
+fn install_cmake_project(settings: &Settings, build_type: &str) {
+    let build_dir = settings.build_dir.clone();
+
+    cmd::execute(
+        vec![
+            "cmake".to_string(),
+            "--install".to_string(),
+            build_dir.clone(),
+            "--prefix".to_string(),
+            // Create a new path using settings.os_release and build_type
+            // i.e. <install_dir>/<os_release>/<build_type>
+            Path::new(&settings.install_dir)
+                .join(&settings.os_release)
+                .join(build_type)
+                .to_str()
+                .unwrap()
+                .to_string(),
+            "--config".to_string(),
+            build_type.to_string(),
+            "-v".to_string()
+        ]
+    );
 }
 
 fn clean_cmake_project(what_to_clean: &str) {

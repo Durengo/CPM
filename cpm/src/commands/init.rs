@@ -68,7 +68,7 @@ fn windows(settings: &mut Settings) {
 
 fn set_build_dir(settings: &mut Settings) {
     // Create a build directory in the working directory, check if it exists first, then save the path to the settings file.
-    let build_dir = Path::new(&settings.working_dir).join("build");
+    let build_dir = Path::new(&settings.working_dir).join("Build");
     settings.build_dir = build_dir.to_str().unwrap().to_string();
     // Create the build directory. If it already exists, it will just skip this step.
     std::fs::create_dir(&settings.build_dir).unwrap_or_else(|e| {
@@ -82,7 +82,7 @@ fn set_build_dir(settings: &mut Settings) {
 
 fn set_install_dir(settings: &mut Settings) {
     // Create an install directory in the working directory, check if it exists first, then save the path to the settings file.
-    let install_dir = Path::new(&settings.working_dir).join("install");
+    let install_dir = Path::new(&settings.working_dir).join("Install");
     settings.install_dir = install_dir.to_str().unwrap().to_string();
     // Create the install directory
     std::fs::create_dir(&settings.install_dir).unwrap_or_else(|e| {
