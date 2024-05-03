@@ -19,6 +19,11 @@ pub struct Settings {
     // Required for building project
     pub build_dir: String,
     pub install_dir: String,
+    pub toolchain_path: String,
+    pub cmake_system_type: String,
+    pub cmake_build_type: String,
+    // Cached commands
+    pub last_cmake_configuration_command: String,
 }
 
 impl Settings {
@@ -50,9 +55,14 @@ impl Settings {
             working_dir: "".to_string(),
             initialized: false,
             install_json_path: "".to_string(),
+            // Required for building project
             build_dir: "".to_string(),
             install_dir: "".to_string(),
-            // working_dir: None,
+            toolchain_path: "".to_string(),
+            cmake_system_type: "".to_string(),
+            cmake_build_type: "".to_string(),
+            // Cached commands
+            last_cmake_configuration_command: "".to_string(),
         })
     }
 
@@ -87,6 +97,12 @@ impl Settings {
         let contents = serde_json::to_string_pretty(&self)?;
         let mut file = File::create(path)?;
         file.write_all(contents.as_bytes())
+    }
+
+    // Saves the settings to the default path '<exe_dir>/settings.json'
+    pub fn save_default(&self) -> io::Result<()> {
+        let path = Self::get_settings_path()?;
+        self.save(&path)
     }
 
     pub fn get_settings_path() -> io::Result<PathBuf> {

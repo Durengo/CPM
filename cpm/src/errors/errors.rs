@@ -10,6 +10,11 @@ pub enum RuntimeErrors {
     // Logic related errors 21-30
     NoInitFlagSet,
     NotInitialized,
+    // Setup Command related errors 31-40
+    GenerateProjectInvalidSystemType(Option<String>),
+    GenerateProjectNtMsvcNoToolchain,
+    // Not implemented 1000-1005
+    NotImplemented,
 }
 
 impl RuntimeErrors {
@@ -23,6 +28,11 @@ impl RuntimeErrors {
             // Logic related errors 21-30
             RuntimeErrors::NoInitFlagSet => 21,
             RuntimeErrors::NotInitialized => 22,
+            // Setup Command related errors 31-40
+            RuntimeErrors::GenerateProjectInvalidSystemType(_) => 31,
+            RuntimeErrors::GenerateProjectNtMsvcNoToolchain => 32,
+            // Not implemented 1000-1005
+            RuntimeErrors::NotImplemented => 1000,
         }
     }
 
@@ -46,8 +56,21 @@ impl RuntimeErrors {
             }
             RuntimeErrors::JSONFileNotFound(None) => "The JSON file was not found".to_string(),
             // Logic related errors 21-30
-            RuntimeErrors::NoInitFlagSet => "The no-init flag was set. Do not run 'init' from entrypoint".to_string(),
+            RuntimeErrors::NoInitFlagSet =>
+                "The no-init flag was set. Do not run 'init' from entrypoint".to_string(),
             RuntimeErrors::NotInitialized => "The settings are not initialized".to_string(),
+            // Setup Command related errors 31-40
+            RuntimeErrors::GenerateProjectInvalidSystemType(Some(system_type)) => {
+                format!("The system type '{}' is invalid", system_type)
+            }
+            RuntimeErrors::GenerateProjectInvalidSystemType(None) => {
+                "The system type is invalid".to_string()
+            }
+            RuntimeErrors::GenerateProjectNtMsvcNoToolchain => {
+                "The system type 'nt/msvc' requires a toolchain path".to_string()
+            }
+            // Not implemented 1000-1005
+            RuntimeErrors::NotImplemented => "This feature is not implemented".to_string(),
         }
     }
 

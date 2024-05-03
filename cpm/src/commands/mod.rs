@@ -34,6 +34,15 @@ pub struct InitArgs {
 
 #[derive(Parser, Debug)]
 pub struct SetupArgs {
+    /// Toolchain path. Must be set to root directory of the toolchain.
+    #[clap(
+        required = false,
+        long,
+        short,
+        value_names = &["TOOLCHAIN-PATH"],
+        verbatim_doc_comment
+    )]
+    pub toolchain: Option<String>,
     /// Generate CMake Project
     /// System types:
     ///     nt/msvc     ---> Windows, MSVC compiler
