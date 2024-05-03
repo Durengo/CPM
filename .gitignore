@@ -1,7 +1,10 @@
 Cache
 cpm/target
-cpm/*.json
-cpm/*.bat
+
+# Do not ignore
 !cpm/presets/*.json
-cpm/build
-cpm/install
+
+# Testing, debugging, and coverage
+cpm/test/manual/*
+!cpm/test/manual/CMakelists.txt
+!cpm/test/manual/main.cpp
