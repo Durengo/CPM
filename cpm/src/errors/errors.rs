@@ -7,6 +7,8 @@ pub enum RuntimeErrors {
     WorkingDirSameAsExePath(String, String),
     // JSON file related errors 10-10
     JSONFileNotFound(Option<String>),
+    // Logic related errors 21-30
+    NoInitFlagSet,
 }
 
 impl RuntimeErrors {
@@ -15,8 +17,10 @@ impl RuntimeErrors {
             // OS related errors 1-9
             RuntimeErrors::NotSupportedOS(_) => 1,
             RuntimeErrors::WorkingDirSameAsExePath(_, _) => 2,
-            // JSON file related errors 10-10
+            // JSON file related errors 10-20
             RuntimeErrors::JSONFileNotFound(_) => 2,
+            // Logic related errors 21-30
+            RuntimeErrors::NoInitFlagSet => 21,
         }
     }
 
@@ -39,6 +43,8 @@ impl RuntimeErrors {
                 format!("The JSON file was not found: {}", message)
             }
             RuntimeErrors::JSONFileNotFound(None) => "The JSON file was not found".to_string(),
+            // Logic related errors 21-30
+            RuntimeErrors::NoInitFlagSet => "The no-init flag was set. Do not run 'init' from entrypoint.".to_string(),
         }
     }
 

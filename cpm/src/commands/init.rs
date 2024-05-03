@@ -1,3 +1,4 @@
+use serde::de;
 use spdlog::prelude::*;
 use std::fs::File;
 use std::io::Write;
@@ -8,8 +9,13 @@ use crate::errors::errors::RuntimeErrors;
 use crate::internal::settings::Settings;
 use crate::internal::install::{ Presets, Config };
 
-pub fn run(args: InitArgs) {
-    trace!("Running the Initialization command with arguments: {:?}", args);
+pub fn run(args: InitArgs, _no_init: bool) {
+    debug!("Running the Initialization command with arguments: {:?}", args);
+    debug!("No init flag: {}", _no_init);
+
+    if _no_init {
+        RuntimeErrors::NoInitFlagSet.exit();
+    }
 
     _ = entry();
 }
@@ -55,6 +61,55 @@ fn os_specific() {
 }
 
 fn windows() {
+    get_and_load_preset_config();
+    create_entrypoint();
+    // if let Some(file_content) = Presets::get("cpm_install.json") {
+    //     let file_str = std::str::from_utf8(&file_content.data).unwrap();
+    //     match serde_json::from_str::<Config>(file_str) {
+    //         Ok(config) => println!("Parsed JSON: {:?}", config),
+    //         Err(e) => eprintln!("Error parsing JSON: {}", e),
+    //     }
+    // } else {
+    //     println!("Failed to load the JSON file.");
+    // }
+}
+
+fn create_entrypoint() {
+    /*
+    Create an appropriate file for an os to have an entry point at the project location.
+    i.e. on windows it would be a .bat file, on linux it would be a .sh file, etc.
+    It's a very simple file which we can just write to disk.
+    Example:
+        @echo off
+        <path to exe> %*
+    The path to the exe is already stored in the settings file.
+    The location of this entrypoint file should be the same as the working directory (just like 'cpm_install.json').
+    Also, it's important to set the no_init flag to true for the entrypoint.
+    */
+    let settings = Settings::init(true).unwrap();
+    let env = settings.os;
+
+    match env.as_str() {
+        "linux" => RuntimeErrors::NotSupportedOS(Some(env.to_string())).exit(),
+        "macos" => RuntimeErrors::NotSupportedOS(Some(env.to_string())).exit(),
+        "windows" => {
+            let entrypoint_path = Path::new(&settings.working_dir).join("cpm.bat");
+            let entrypoint_content = format!("@echo off\n{} --no-init %*", settings.exe_path);
+            match File::create(entrypoint_path) {
+                Ok(mut file) => {
+                    match file.write_all(entrypoint_content.as_bytes()) {
+                        Ok(_) => info!("Successfully wrote the entrypoint file to disk."),
+                        Err(e) => error!("Error writing the entrypoint file to disk: {}", e),
+                    }
+                }
+                Err(e) => error!("Error creating the entrypoint file: {}", e),
+            }
+        }
+        _ => RuntimeErrors::NotSupportedOS(Some(env.to_string())).exit(),
+    }
+}
+
+fn get_and_load_preset_config() {
     if let Some(file_content) = Presets::get("cpm_install.json") {
         // let file_str = std::str::from_utf8(&file_content.data).unwrap();
         let settings = Settings::init(false).unwrap();
@@ -67,15 +122,6 @@ fn windows() {
     } else {
         error!("Failed to load the JSON file.");
     }
-    // if let Some(file_content) = Presets::get("cpm_install.json") {
-    //     let file_str = std::str::from_utf8(&file_content.data).unwrap();
-    //     match serde_json::from_str::<Config>(file_str) {
-    //         Ok(config) => println!("Parsed JSON: {:?}", config),
-    //         Err(e) => eprintln!("Error parsing JSON: {}", e),
-    //     }
-    // } else {
-    //     println!("Failed to load the JSON file.");
-    // }
 }
 
 fn write_embedded_file_to_disk(
