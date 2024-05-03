@@ -9,6 +9,7 @@ pub enum RuntimeErrors {
     JSONFileNotFound(Option<String>),
     // Logic related errors 21-30
     NoInitFlagSet,
+    NotInitialized,
 }
 
 impl RuntimeErrors {
@@ -21,6 +22,7 @@ impl RuntimeErrors {
             RuntimeErrors::JSONFileNotFound(_) => 2,
             // Logic related errors 21-30
             RuntimeErrors::NoInitFlagSet => 21,
+            RuntimeErrors::NotInitialized => 22,
         }
     }
 
@@ -44,7 +46,8 @@ impl RuntimeErrors {
             }
             RuntimeErrors::JSONFileNotFound(None) => "The JSON file was not found".to_string(),
             // Logic related errors 21-30
-            RuntimeErrors::NoInitFlagSet => "The no-init flag was set. Do not run 'init' from entrypoint.".to_string(),
+            RuntimeErrors::NoInitFlagSet => "The no-init flag was set. Do not run 'init' from entrypoint".to_string(),
+            RuntimeErrors::NotInitialized => "The settings are not initialized".to_string(),
         }
     }
 

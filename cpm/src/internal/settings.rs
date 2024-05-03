@@ -7,12 +7,18 @@ use spdlog::prelude::*;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Settings {
+    // Basic information
     pub os: String,
+    pub os_release: String,
+    pub os_version: String,
     pub exe_path: String,
     pub exe_dir: String,
     pub working_dir: String,
     pub initialized: bool,
     pub install_json_path: String,
+    // Required for building project
+    pub build_dir: String,
+    pub install_dir: String,
 }
 
 impl Settings {
@@ -37,11 +43,15 @@ impl Settings {
             .map(|s| s.to_string());
         Ok(Settings {
             os: std::env::consts::OS.to_string(),
+            os_release: sys_info::os_type().unwrap_or_default(),
+            os_version: sys_info::os_release().unwrap_or_default(),
             exe_path: exe_path,
             exe_dir: exe_dir,
             working_dir: "".to_string(),
             initialized: false,
             install_json_path: "".to_string(),
+            build_dir: "".to_string(),
+            install_dir: "".to_string(),
             // working_dir: None,
         })
     }

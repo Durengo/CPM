@@ -2,6 +2,7 @@ use clap::Parser;
 
 pub mod version;
 pub mod init;
+pub mod setup;
 
 #[derive(Parser)]
 pub enum Commands {
@@ -9,6 +10,8 @@ pub enum Commands {
     Version(VersionArgs),
     /// Initialize CPM in the current directory
     Init(InitArgs),
+    /// Setup CPM in the current directory
+    Setup(SetupArgs),
 }
 
 #[derive(Parser, Debug)]
@@ -28,3 +31,6 @@ pub struct InitArgs {
     // #[clap(long, short, required = true)]
     // pub config: String,
 }
+
+#[derive(Parser, Debug)]
+pub struct SetupArgs {}
