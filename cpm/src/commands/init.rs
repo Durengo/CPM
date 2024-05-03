@@ -100,6 +100,15 @@ fn create_entrypoint() {
 }
 
 fn get_and_load_preset_config(settings: &mut Settings) {
+    // If preset already exists skip this step
+    // It will most likely not be cached so we should hard check for the file in the working directory
+    let config_path = Path::new(&settings.working_dir).join("cpm_install.json");
+    if config_path.exists() {
+        // Make sure to add the preset path to the settings file
+        settings.install_json_path = config_path.to_str().unwrap().to_string();
+        debug!("Preset already exists. Skipping this step.");
+        return;
+    }
     if let Some(file_content) = Presets::get("cpm_install.json") {
         // info!("Working directory: {:?}", settings.working_dir);
         let destination_path = Path::new(&settings.working_dir).join("cpm_install.json");
@@ -107,7 +116,7 @@ fn get_and_load_preset_config(settings: &mut Settings) {
             Ok(_) => {
                 debug!("Successfully wrote the JSON file to disk.");
                 settings.install_json_path = destination_path.to_str().unwrap().to_string();
-            },
+            }
             Err(e) => error!("Error writing the JSON file to disk: {}", e),
         }
     } else {
