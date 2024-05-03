@@ -4,12 +4,13 @@ use std::fs::File;
 use std::io::Write;
 use std::path::Path;
 
-use crate::commands::SetupArgs;
+use crate::commands::BuildArgs;
 use crate::errors::errors::RuntimeErrors;
 use crate::internal::settings::Settings;
 use crate::internal::install::{ Presets, Config };
+use crate::internal::cmd;
 
-pub fn run(args: SetupArgs) {
+pub fn run(args: BuildArgs) {
     debug!("Running the Initialization command with arguments: {:?}", args);
 
     // Grab the settings file as it will be needed for the subcommands.
@@ -82,6 +83,8 @@ fn generate_cmake_project(settings: &mut Settings, system_type: &str, build_type
     settings.cmake_system_type = system_type.to_string();
     settings.cmake_build_type = build_type.to_string();
     settings.last_cmake_configuration_command = preset;
+
+    cmd::execute();
 
     debug!("Settings: {:?}", settings);
 }

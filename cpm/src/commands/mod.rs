@@ -2,7 +2,7 @@ use clap::Parser;
 
 pub mod version;
 pub mod init;
-pub mod setup;
+pub mod build;
 
 #[derive(Parser)]
 pub enum Commands {
@@ -10,8 +10,8 @@ pub enum Commands {
     Version(VersionArgs),
     /// Initialize CPM in the current directory
     Init(InitArgs),
-    /// Setup CPM in the current directory
-    Setup(SetupArgs),
+    /// Build CPM in the current directory
+    Build(BuildArgs),
 }
 
 #[derive(Parser, Debug)]
@@ -33,7 +33,7 @@ pub struct InitArgs {
 }
 
 #[derive(Parser, Debug)]
-pub struct SetupArgs {
+pub struct BuildArgs {
     /// Toolchain path. Must be set to root directory of the toolchain.
     #[clap(
         required = false,
