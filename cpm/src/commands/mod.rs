@@ -40,24 +40,6 @@ pub struct BuildArgs {
     /// Toolchain path. Must be set to root directory of the toolchain.
     #[clap(required = false, long, short, value_names = &["TOOLCHAIN-PATH"], verbatim_doc_comment)]
     pub toolchain: Option<String>,
-    /// Generate CMake Project
-    /// System types:
-    ///     nt/msvc     ---> Windows, MSVC compiler
-    ///     unix/clang  ---> Unix, Clang compiler
-    ///     unix/gcc    ---> Unix, GCC compiler
-    /// Build types:
-    ///     Debug       ---> Debug build
-    ///     Release     ---> Release build
-    #[clap(
-        required = false,
-        long,
-        short,
-        num_args(2),
-        value_names = &["SYSTEM_TYPE", "BUILD_TYPE"],
-        verbatim_doc_comment
-    )]
-    pub generate_project: Option<Vec<String>>,
-
     /// Sets Build Type to Debug.
     /// Must be set to either Debug or Release. Required shorthand for other commands.
     /// Build types:
@@ -75,6 +57,21 @@ pub struct BuildArgs {
     ///     Release     ---> Release build
     #[clap(required = false, long, short, action = clap::ArgAction::SetTrue, verbatim_doc_comment)]
     pub release_build_type: bool,
+
+    /// Generate CMake Project. Will not run without a build type set flag.
+    /// System types:
+    ///     nt/msvc     ---> Windows, MSVC compiler
+    ///     unix/clang  ---> Unix, Clang compiler
+    ///     unix/gcc    ---> Unix, GCC compiler
+    #[clap(
+        required = false,
+        long,
+        short,
+        num_args(1),
+        value_names = &["SYSTEM_TYPE"],
+        verbatim_doc_comment
+    )]
+    pub generate_project: Option<String>,
 
     /// Build CMake Project. Automatically uses CMAKE_BUILD_TYPE. Will not run without a build type set flag.
     #[clap(required = false, long, short, action = clap::ArgAction::SetTrue, verbatim_doc_comment)]

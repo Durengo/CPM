@@ -36,29 +36,20 @@ pub fn run(args: BuildArgs) {
     }
 
     if let Some(generate_args) = &args.generate_project {
-        if generate_args.len() == 2 {
-            info!(
-                "Generating CMake project for system type '{}' with build type '{}'",
-                generate_args[0],
-                generate_args[1]
-            );
-            generate_cmake_project(&mut settings, &generate_args[0], &generate_args[1]);
-        }
+        check_build_type(&args);
+
+        let build_type = if args.debug_build_type { "Debug" } else { "Release" };
+
+        info!(
+            "Generating CMake project for system type '{}' with build type '{}'",
+            generate_args,
+            build_type
+        );
+        generate_cmake_project(&mut settings, &generate_args, &build_type);
     }
 
     if args.build_project {
-        // If none are set, throw an error
-        if !(args.debug_build_type || args.release_build_type) {
-            error!(
-                "Build type not set. Use 'build --set-build-type <type>' to set the build type."
-            );
-            RuntimeErrors::BuildTypeNotSet.exit();
-        }
-        // If both are set, throw an error
-        if args.debug_build_type && args.release_build_type {
-            error!("Both debug and release build types set. Use only one.");
-            RuntimeErrors::BuildTypeBothSet.exit();
-        }
+        check_build_type(&args);
 
         // Depending on build type set string variable as "Debug" or "Release"
         let build_type = if args.debug_build_type { "Debug" } else { "Release" };
@@ -74,6 +65,19 @@ pub fn run(args: BuildArgs) {
     if let Some(what_to_clean) = &args.clean_project {
         info!("Cleaning '{}' in the CMake project", what_to_clean);
         clean_cmake_project(what_to_clean);
+    }
+}
+
+fn check_build_type(args: &BuildArgs) {
+    // If none are set, throw an error
+    if !(args.debug_build_type || args.release_build_type) {
+        error!("Build type not set. Use 'build --set-build-type <type>' to set the build type.");
+        RuntimeErrors::BuildTypeNotSet.exit();
+    }
+    // If both are set, throw an error
+    if args.debug_build_type && args.release_build_type {
+        error!("Both debug and release build types set. Use only one.");
+        RuntimeErrors::BuildTypeBothSet.exit();
     }
 }
 
