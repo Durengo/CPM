@@ -5,7 +5,9 @@ pub mod init;
 
 #[derive(Parser)]
 pub enum Commands {
+    /// Run the 'version' command
     Version(VersionArgs),
+    /// Initialize CPM in the current directory
     Init(InitArgs),
 }
 

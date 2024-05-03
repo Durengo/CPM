@@ -38,7 +38,7 @@ fn entry() -> std::io::Result<()> {
 
     info!("Working directory: {:?}", settings.working_dir);
 
-    os_specific();
+    os_specific(&mut settings);
 
     settings.initialized = true;
     settings.save(&Settings::get_settings_path()?)?;
@@ -48,30 +48,20 @@ fn entry() -> std::io::Result<()> {
     Ok(())
 }
 
-fn os_specific() {
-    let settings = Settings::init(true).unwrap();
-    let env = settings.os;
+fn os_specific(settings: &mut Settings) {
+    let env = &settings.os;
 
     match env.as_str() {
         "linux" => RuntimeErrors::NotSupportedOS(Some(env.to_string())).exit(),
         "macos" => RuntimeErrors::NotSupportedOS(Some(env.to_string())).exit(),
-        "windows" => windows(),
+        "windows" => windows(settings),
         _ => RuntimeErrors::NotSupportedOS(Some(env.to_string())).exit(),
     }
 }
 
-fn windows() {
-    get_and_load_preset_config();
+fn windows(settings: &mut Settings) {
+    get_and_load_preset_config(settings);
     create_entrypoint();
-    // if let Some(file_content) = Presets::get("cpm_install.json") {
-    //     let file_str = std::str::from_utf8(&file_content.data).unwrap();
-    //     match serde_json::from_str::<Config>(file_str) {
-    //         Ok(config) => println!("Parsed JSON: {:?}", config),
-    //         Err(e) => eprintln!("Error parsing JSON: {}", e),
-    //     }
-    // } else {
-    //     println!("Failed to load the JSON file.");
-    // }
 }
 
 fn create_entrypoint() {
@@ -86,7 +76,7 @@ fn create_entrypoint() {
     The location of this entrypoint file should be the same as the working directory (just like 'cpm_install.json').
     Also, it's important to set the no_init flag to true for the entrypoint.
     */
-    let settings = Settings::init(true).unwrap();
+    let settings = Settings::init(false).unwrap();
     let env = settings.os;
 
     match env.as_str() {
@@ -109,14 +99,15 @@ fn create_entrypoint() {
     }
 }
 
-fn get_and_load_preset_config() {
+fn get_and_load_preset_config(settings: &mut Settings) {
     if let Some(file_content) = Presets::get("cpm_install.json") {
-        // let file_str = std::str::from_utf8(&file_content.data).unwrap();
-        let settings = Settings::init(false).unwrap();
-        info!("Working directory: {:?}", settings.working_dir);
+        // info!("Working directory: {:?}", settings.working_dir);
         let destination_path = Path::new(&settings.working_dir).join("cpm_install.json");
-        match ({ write_embedded_file_to_disk("cpm_install.json", Path::new(&destination_path)) }) {
-            Ok(_) => debug!("Successfully wrote the JSON file to disk."),
+        match write_embedded_file_to_disk("cpm_install.json", &destination_path) {
+            Ok(_) => {
+                debug!("Successfully wrote the JSON file to disk.");
+                settings.install_json_path = destination_path.to_str().unwrap().to_string();
+            },
             Err(e) => error!("Error writing the JSON file to disk: {}", e),
         }
     } else {

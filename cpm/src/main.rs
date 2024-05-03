@@ -16,7 +16,8 @@ struct Cli {
     command: commands::Commands,
 
     // Add a flag that if set it will not allow to call the init command. This is meant for when the entrypoint is created.
-    #[clap(long, short, global = true, action = clap::ArgAction::SetTrue)]
+    /// Do not run the 'init' command
+    #[clap(long, global = true, action = clap::ArgAction::SetTrue)]
     pub no_init: bool,
 }
 
