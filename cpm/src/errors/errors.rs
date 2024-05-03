@@ -28,7 +28,11 @@ impl RuntimeErrors {
             }
             RuntimeErrors::NotSupportedOS(None) => "The OS is not supported".to_string(),
             RuntimeErrors::WorkingDirSameAsExePath(working_dir, exe_path) => {
-                format!("The working directory is the same as the executable directory: {} == {}", working_dir, exe_path)
+                format!(
+                    "The working directory is the same as the executable directory: {} == {}",
+                    working_dir,
+                    exe_path
+                )
             }
             // JSON file related errors 10-10
             RuntimeErrors::JSONFileNotFound(Some(message)) => {

@@ -1,6 +1,6 @@
 use std::sync::Arc;
 use once_cell::sync::Lazy;
-use spdlog::{prelude::*, sink::Sink, Logger, LoggerBuilder};
+use spdlog::{ prelude::*, sink::Sink, Logger, LoggerBuilder };
 
 // Struct to hold all loggers
 pub struct Loggers {

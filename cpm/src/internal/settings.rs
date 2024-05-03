@@ -1,5 +1,5 @@
 use serde::{ Serialize, Deserialize };
-use std::fs::{self, File};
+use std::fs::{ self, File };
 use std::io::{ self, Read, Write };
 use std::path::Path;
 use std::path::PathBuf;
@@ -12,16 +12,21 @@ pub struct Settings {
     pub exe_dir: String,
     pub working_dir: String,
     pub initialized: bool,
+    pub install_json_path: String,
 }
 
 impl Settings {
     pub fn new() -> io::Result<Self> {
         // Get the full executable path
         let exe_path_buf = std::env::current_exe()?;
-        let exe_path = exe_path_buf.to_str().map(|s| s.to_string()).unwrap_or_default();
+        let exe_path = exe_path_buf
+            .to_str()
+            .map(|s| s.to_string())
+            .unwrap_or_default();
 
         // Get the executable directory by finding the parent of the executable path
-        let exe_dir = exe_path_buf.parent()
+        let exe_dir = exe_path_buf
+            .parent()
             .and_then(|path| path.to_str())
             .map(|s| s.to_string())
             .unwrap_or_default();
@@ -36,6 +41,7 @@ impl Settings {
             exe_dir: exe_dir,
             working_dir: "".to_string(),
             initialized: false,
+            install_json_path: "".to_string(),
             // working_dir: None,
         })
     }
