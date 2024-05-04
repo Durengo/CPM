@@ -312,6 +312,41 @@ fn windows_check_prerequisites(config: &Config) {
                         info!("Git found: {}", git_version);
                     }
                 }
+                "vcpkg" => {
+                    let vcpkg_version = cmd::execute_and_return_output(
+                        vec!["vcpkg".to_string(), "--version".to_string()]
+                    );
+                    if vcpkg_version.is_empty() {
+                        error!("VCPKG not found. Please install VCPKG and try again.");
+                        RuntimeErrors::PrerequisiteNotFound(Some("vcpkg".to_string())).exit();
+                    } else {
+                        // Might produce this in the output: 'See LICENSE.txt for license information.' remove this.
+                        let vcpkg_version = vcpkg_version.lines().next().unwrap_or_default();
+                        info!("VCPKG found: {}", vcpkg_version);
+                    }
+                }
+                "rustc" => {
+                    let rustc_version = cmd::execute_and_return_output(
+                        vec!["rustc".to_string(), "--version".to_string()]
+                    );
+                    if rustc_version.is_empty() {
+                        error!("Rust not found. Please install Rust and try again.");
+                        RuntimeErrors::PrerequisiteNotFound(Some("rustc".to_string())).exit();
+                    } else {
+                        info!("Rust found: {}", rustc_version);
+                    }
+                }
+                "cargo" => {
+                    let cargo_version = cmd::execute_and_return_output(
+                        vec!["cargo".to_string(), "--version".to_string()]
+                    );
+                    if cargo_version.is_empty() {
+                        error!("Cargo not found. Please install Cargo and try again.");
+                        RuntimeErrors::PrerequisiteNotFound(Some("cargo".to_string())).exit();
+                    } else {
+                        info!("Cargo found: {}", cargo_version);
+                    }
+                }
                 // Since the prerequisite is not in the mappings, just check if the executable exists
                 _ => {
                     let prereq_path = cmd::execute_and_return_output(
