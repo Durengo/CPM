@@ -35,7 +35,7 @@ pub fn execute_and_display_output(cmd_array: Vec<String>) {
                 let out = String::from_utf8_lossy(&output.stdout)
                     .trim_end_matches(|c| (c == '\r' || c == '\n'))
                     .to_string();
-                trace!("STDOUT:\n{}", out);
+                info!("STDOUT:\n{}", out);
             }
             if !output.stderr.is_empty() {
                 let err = String::from_utf8_lossy(&output.stderr)
