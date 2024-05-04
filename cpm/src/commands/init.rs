@@ -22,7 +22,7 @@ pub fn run(args: InitArgs, _no_init: bool) {
 fn entry() -> std::io::Result<()> {
     let mut settings = Settings::load(&Settings::get_settings_path()?)?;
 
-    debug!("Before:\n{:?}", settings);
+    debug!("Before:\n{:#?}", settings);
 
     settings.working_dir = std::env::current_dir()?.to_str().unwrap().to_string();
     // If working directory is the same as the executable directory, throw an error
@@ -35,14 +35,14 @@ fn entry() -> std::io::Result<()> {
 
     settings.save(&Settings::get_settings_path()?)?;
 
-    info!("Working directory: {:?}", settings.working_dir);
+    info!("Working directory set: {:#?}", settings.working_dir);
 
     os_specific(&mut settings);
 
     settings.initialized = true;
     settings.save(&Settings::get_settings_path()?)?;
 
-    debug!("After:\n{:?}", settings);
+    debug!("After:\n{:#?}", settings);
 
     Ok(())
 }
@@ -72,7 +72,7 @@ fn set_build_dir(settings: &mut Settings) {
     // Create the build directory. If it already exists, it will just skip this step.
     std::fs::create_dir(&settings.build_dir).unwrap_or_else(|e| {
         if e.kind() == std::io::ErrorKind::AlreadyExists {
-            debug!("The build directory already exists. Skipping this step.");
+            warn!("The 'Build' directory already exists. Skipping this step.");
         } else {
             error!("Error creating the build directory: {}", e);
         }
@@ -86,7 +86,7 @@ fn set_install_dir(settings: &mut Settings) {
     // Create the install directory
     std::fs::create_dir(&settings.install_dir).unwrap_or_else(|e| {
         if e.kind() == std::io::ErrorKind::AlreadyExists {
-            debug!("The install directory already exists. Skipping this step.");
+            warn!("The 'Install' directory already exists. Skipping this step.");
         } else {
             error!("Error creating the install directory: {}", e);
         }
@@ -114,10 +114,14 @@ fn create_entrypoint() {
         "windows" => {
             let entrypoint_path = Path::new(&settings.working_dir).join("cpm.bat");
             let entrypoint_content = format!("@echo off\n{} --no-init %*", settings.exe_path);
-            match File::create(entrypoint_path) {
+            match File::create(entrypoint_path.clone()) {
                 Ok(mut file) => {
                     match file.write_all(entrypoint_content.as_bytes()) {
-                        Ok(_) => info!("Successfully wrote the entrypoint file to disk."),
+                        Ok(_) =>
+                            info!(
+                                "Successfully wrote the entrypoint file to disk: {:?}",
+                                entrypoint_path.clone().to_str().unwrap()
+                            ),
                         Err(e) => error!("Error writing the entrypoint file to disk: {}", e),
                     }
                 }
@@ -135,15 +139,17 @@ fn get_and_load_preset_config(settings: &mut Settings) {
     if config_path.exists() {
         // Make sure to add the preset path to the settings file
         settings.install_json_path = config_path.to_str().unwrap().to_string();
-        debug!("Preset already exists. Skipping this step.");
+        warn!("Preset already exists. Skipping this step.");
         return;
     }
-    if let Some(file_content) = Presets::get("cpm_install.json") {
-        // info!("Working directory: {:?}", settings.working_dir);
+    if let Some(_file_content) = Presets::get("cpm_install.json") {
         let destination_path = Path::new(&settings.working_dir).join("cpm_install.json");
         match write_embedded_file_to_disk("cpm_install.json", &destination_path) {
             Ok(_) => {
-                debug!("Successfully wrote the JSON file to disk.");
+                info!(
+                    "Successfully wrote the JSON file to disk: {:?}",
+                    destination_path.to_str().unwrap()
+                );
                 settings.install_json_path = destination_path.to_str().unwrap().to_string();
             }
             Err(e) => error!("Error writing the JSON file to disk: {}", e),
@@ -158,7 +164,7 @@ fn write_embedded_file_to_disk(
     output_file_path: &Path
 ) -> std::io::Result<()> {
     if let Some(embedded_file) = Presets::get(embedded_file_name) {
-        debug!("Writing embedded file to disk: {:?}", output_file_path);
+        info!("Writing embedded file to disk: {:?}", output_file_path);
         let mut output_file = File::create(output_file_path)?;
         output_file.write_all(&embedded_file.data)?;
         Ok(())

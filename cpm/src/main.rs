@@ -25,10 +25,17 @@ struct Cli {
     /// WARNING: This will overwrite the current settings file. This will break the current state if already initialized in the current directory.
     #[clap(long, short, global = true, action = clap::ArgAction::SetTrue, verbatim_doc_comment)]
     pub force_reinit: bool,
+
+    // TODO: Find a better logging solution. SPDLOG is not working as expected.
+    // // Flag to show debug logs
+    // /// Toggle verbose output
+    // /// WARNING: This will print a lot of information to the console.
+    // #[clap(long, short, global = true, verbatim_doc_comment)]
+    // pub verbose: bool,
 }
 
 fn main() {
-    let loggers = Loggers::def();
+    let _loggers = Loggers::def();
 
     let cli = Cli::parse();
 
@@ -39,7 +46,7 @@ fn main() {
     }
 
     check_supported_os(&settings);
-    // debug!("Settings: {:#?}", settings);
+    debug!("Settings:\n{:#?}", settings);
 
     match cli.command {
         Some(commands::Commands::Init(add_args)) => commands::init::run(add_args, cli.no_init),

@@ -6,7 +6,7 @@ use crate::internal::settings::Settings;
 use crate::internal::cmd;
 
 pub fn run(args: CacheArgs) {
-    trace!("Running the Initialization command with arguments: {:#?}", args);
+    debug!("Running the Initialization command with arguments: {:#?}", args);
 
     // Grab the settings file as it will be needed for the subcommands.
     let settings_path = match Settings::get_settings_path() {

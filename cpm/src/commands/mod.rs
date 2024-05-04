@@ -18,19 +18,7 @@ pub enum Commands {
 }
 
 #[derive(Parser, Debug)]
-pub struct InitArgs {
-    // #[clap(required = true)]
-    // pub working_directory: String,
-
-    // #[clap(long, short, action = clap::ArgAction::SetTrue)]
-    // pub verbose: bool,
-
-    // #[clap(long, short, default_value = "info")]
-    // pub log_level: String,
-
-    // #[clap(long, short, required = true)]
-    // pub config: String,
-}
+pub struct InitArgs {}
 
 #[derive(Parser, Debug)]
 pub struct SetupArgs {
@@ -103,11 +91,11 @@ pub struct BuildArgs {
         required = false,
         long,
         short,
-        num_args(1),
         value_names = &["SYSTEM_TYPE"],
+        action = clap::ArgAction::Set,
         verbatim_doc_comment
     )]
-    pub generate_project: Option<String>,
+    pub generate_project: Option<Option<String>>,
 
     /// Build CMake Project. Automatically uses CMAKE_BUILD_TYPE. Will not run without a build type set flag.
     #[clap(required = false, long, short, action = clap::ArgAction::SetTrue, verbatim_doc_comment)]

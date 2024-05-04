@@ -5,6 +5,7 @@ pub enum RuntimeErrors {
     // OS related errors 1-9
     NotSupportedOS(Option<String>),
     WorkingDirSameAsExePath(String, String),
+    CmdCaughtStdErr(Option<String>),
     // JSON file related errors 10-10
     JSONFileNotFound(Option<String>),
     ConfigParseError(Option<String>),
@@ -35,6 +36,7 @@ impl RuntimeErrors {
             // OS related errors 1-9
             RuntimeErrors::NotSupportedOS(_) => 1,
             RuntimeErrors::WorkingDirSameAsExePath(_, _) => 2,
+            RuntimeErrors::CmdCaughtStdErr(_) => 3,
             // JSON file related errors 10-20
             RuntimeErrors::JSONFileNotFound(_) => 2,
             RuntimeErrors::ConfigParseError(_) => 3,
@@ -60,73 +62,130 @@ impl RuntimeErrors {
         }
     }
 
+    // Errors should also display the error code
     pub fn error_message(&self) -> String {
         match self {
             // OS related errors 1-9
             RuntimeErrors::NotSupportedOS(Some(message)) => {
-                format!("The OS is not supported: {}", message)
+                format!("|Error {}| The OS is not supported: {}", self.error_code(), message)
             }
-            RuntimeErrors::NotSupportedOS(None) => "The OS is not supported".to_string(),
+            RuntimeErrors::NotSupportedOS(None) => {
+                format!("|Error {}| The OS is not supported", self.error_code())
+            }
             RuntimeErrors::WorkingDirSameAsExePath(working_dir, exe_path) => {
                 format!(
-                    "The working directory is the same as the executable directory: {} == {}",
+                    "|Error {}| The working directory is the same as the executable directory: {} == {}",
+                    self.error_code(),
                     working_dir,
                     exe_path
                 )
             }
+            RuntimeErrors::CmdCaughtStdErr(Some(message)) => {
+                format!("|Error {}| Command caught stderr: {}", self.error_code(), message)
+            }
+            RuntimeErrors::CmdCaughtStdErr(None) => {
+                format!("|Error {}| Command caught stderr", self.error_code())
+            }
             // JSON file related errors 10-10
             RuntimeErrors::JSONFileNotFound(Some(message)) => {
-                format!("The JSON file was not found: {}", message)
+                format!("|Error {}| The JSON file was not found: {}", self.error_code(), message)
             }
-            RuntimeErrors::JSONFileNotFound(None) => "The JSON file was not found".to_string(),
+            RuntimeErrors::JSONFileNotFound(None) => {
+                format!("|Error {}| The JSON file was not found", self.error_code())
+            }
             RuntimeErrors::ConfigParseError(Some(message)) => {
-                format!("Error parsing the config file: {}", message)
+                format!("|Error {}| Error parsing the config file: {}", self.error_code(), message)
             }
-            RuntimeErrors::ConfigParseError(None) => "Error parsing the config file".to_string(),
+            RuntimeErrors::ConfigParseError(None) => {
+                format!("|Error {}| Error parsing the config file", self.error_code())
+            }
             // Logic related errors 21-30
-            RuntimeErrors::NoInitFlagSet =>
-                "The no-init flag was set. Do not run 'init' from entrypoint".to_string(),
-            RuntimeErrors::NotInitialized => "The settings are not initialized".to_string(),
-            RuntimeErrors::NoCommandsProvided => "No commands were provided".to_string(),
+            RuntimeErrors::NoInitFlagSet => {
+                format!(
+                    "|Error {}| The no-init flag was set. Do not run 'init' from entrypoint",
+                    self.error_code()
+                )
+            }
+            RuntimeErrors::NotInitialized => {
+                format!(
+                    "|Error {}| Project not initialized, run 'init' command first",
+                    self.error_code()
+                )
+            }
+            RuntimeErrors::NoCommandsProvided => {
+                format!(
+                    "|Error {}| No commands provided. Run 'cpm --help' for more information",
+                    self.error_code()
+                )
+            }
             // Setup Command related errors 31-40
             RuntimeErrors::PrerequisiteNotFound(Some(prerequisite)) => {
-                format!("Prerequisite '{}' not found", prerequisite)
+                format!("|Error {}| Prerequisite '{}' not found", self.error_code(), prerequisite)
             }
-            RuntimeErrors::PrerequisiteNotFound(None) => "Prerequisite not found".to_string(),
+            RuntimeErrors::PrerequisiteNotFound(None) => {
+                format!("|Error {}| Prerequisite not found", self.error_code())
+            }
             RuntimeErrors::PackageInstallFailed(Some(package)) => {
-                format!("Failed to install package '{}'", package)
+                format!("|Error {}| Failed to install package '{}'", self.error_code(), package)
             }
-            RuntimeErrors::PackageInstallFailed(None) => "Failed to install package".to_string(),
+            RuntimeErrors::PackageInstallFailed(None) => {
+                format!("|Error {}| Failed to install package", self.error_code())
+            }
             RuntimeErrors::PostInstallFailed(Some(post_install)) => {
-                format!("Post install failed: {}", post_install)
+                format!("|Error {}| Post install failed: {}", self.error_code(), post_install)
             }
-            RuntimeErrors::PostInstallFailed(None) => "Post install failed".to_string(),
+            RuntimeErrors::PostInstallFailed(None) => {
+                format!("|Error {}| Post install failed", self.error_code())
+            }
             RuntimeErrors::PostInstallNoDefinition(Some(post_install)) => {
-                format!("Post install '{}' has no definition", post_install)
+                format!(
+                    "|Error {}| Post install '{}' has no definition",
+                    self.error_code(),
+                    post_install
+                )
             }
-            RuntimeErrors::PostInstallNoDefinition(None) =>
-                "Post install has no definition".to_string(),
+            RuntimeErrors::PostInstallNoDefinition(None) => {
+                format!("|Error {}| Post install has no definition", self.error_code())
+            }
             // Build Command related errors 31-40
             RuntimeErrors::GenerateProjectInvalidSystemType(Some(system_type)) => {
-                format!("The system type '{}' is invalid", system_type)
+                format!(
+                    "|Error {}| The system type '{}' is invalid",
+                    self.error_code(),
+                    system_type
+                )
             }
             RuntimeErrors::GenerateProjectInvalidSystemType(None) => {
-                "The system type is invalid".to_string()
+                format!("|Error {}| The system type is invalid", self.error_code())
             }
             RuntimeErrors::GenerateProjectNtMsvcNoToolchain => {
-                "The system type 'nt/msvc' requires a toolchain path".to_string()
+                format!(
+                    "|Error {}| The system type 'nt/msvc' requires a toolchain path",
+                    self.error_code()
+                )
             }
             RuntimeErrors::ToolchainNotFound(toolchain) => {
-                format!("Toolchain '{}' not found", toolchain)
+                format!("|Error {}| Toolchain '{}' not found", self.error_code(), toolchain)
             }
-            RuntimeErrors::BuildTypeNotSet => "The build type was not set".to_string(),
-            RuntimeErrors::BuildTypeBothSet => "Both debug and release build types set".to_string(),
+            RuntimeErrors::BuildTypeNotSet => {
+                format!("|Error {}| The build type was not set", self.error_code())
+            }
+            RuntimeErrors::BuildTypeBothSet => {
+                format!("|Error {}| Both debug and release build types set", self.error_code())
+            }
             RuntimeErrors::InvalidCleanCommand(command) => {
-                format!("Invalid clean command: {}", command)
+                format!("|Error {}| Invalid clean command: {}", self.error_code(), command)
             }
-            RuntimeErrors::ProjectNotInitialized => "Project not initialized, run 'init' command first".to_string(),
+            RuntimeErrors::ProjectNotInitialized => {
+                format!(
+                    "|Error {}| Project not initialized, run 'init' command first",
+                    self.error_code()
+                )
+            }
             // Not implemented 1000-1005
-            RuntimeErrors::NotImplemented => "This feature is not implemented".to_string(),
+            RuntimeErrors::NotImplemented => {
+                format!("|Error {}| This feature is not implemented", self.error_code())
+            }
         }
     }
 

@@ -32,7 +32,7 @@ pub fn run(args: BuildArgs) {
         RuntimeErrors::ProjectNotInitialized.exit();
     }
 
-    if let Some(generate_args) = &args.generate_project {
+    if let Some(maybe_generate_args) = &args.generate_project {
         check_build_type(&args);
 
         let build_type = if args.debug_build_type {
@@ -43,13 +43,64 @@ pub fn run(args: BuildArgs) {
             "Release"
         };
 
-        info!(
-            "Generating CMake project for system type '{}' with build type '{}'",
-            generate_args,
-            build_type
-        );
-        generate_cmake_project(&mut settings, &generate_args, &build_type);
+        match maybe_generate_args {
+            Some(generate_args) if !generate_args.trim().is_empty() => {
+                info!(
+                    "Generating CMake project for system type '{}' with build type '{}'",
+                    generate_args,
+                    build_type
+                );
+                generate_cmake_project(&mut settings, generate_args, build_type);
+            }
+            _ => {
+                warn!(
+                    "No system type provided or empty. Will attempt to use the last cmake configuration command."
+                );
+                let last_cmd = &settings.last_cmake_configuration_command;
+                if !last_cmd.is_empty() {
+                    cmd::execute_and_display_output(last_cmd.clone());
+                } else {
+                    error!("No previous CMake configuration command available.");
+                }
+            }
+        }
+
+        // if generate_args.trim().is_empty() {
+        //     warn!("No system type provided. Will attempt to use last cmake configuration command.");
+
+        //     let last_cmd = &settings.last_cmake_configuration_command;
+
+        //     cmd::execute_and_display_output(last_cmd.clone());
+        // } else {
+        //     info!(
+        //         "Generating CMake project for system type '{}' with build type '{}'",
+        //         generate_args,
+        //         build_type
+        //     );
+        //     generate_cmake_project(&mut settings, &generate_args, &build_type);
+        // }
+
+        info!("Project generated successfully.");
     }
+    // else if !args.generate_project.is_empty() {
+    //     check_build_type(&args);
+
+    //     let build_type = if args.debug_build_type {
+    //         info!("Build Type: Debug");
+    //         "Debug"
+    //     } else {
+    //         info!("Build Type: Release");
+    //         "Release"
+    //     };
+
+    //     warn!("No system type provided. Will attempt to use last cmake configuration command.");
+
+    //     let last_cmd = &settings.last_cmake_configuration_command;
+
+    //     cmd::execute_and_display_output(last_cmd.clone());
+
+    //     info!("Project generated successfully.");
+    // }
 
     if args.build_project {
         check_build_type(&args);
@@ -64,6 +115,8 @@ pub fn run(args: BuildArgs) {
         };
 
         build_cmake_project(&settings, build_type);
+
+        info!("Project built successfully.");
     }
 
     if args.install_project {
@@ -79,6 +132,8 @@ pub fn run(args: BuildArgs) {
         };
 
         install_cmake_project(&settings, build_type);
+
+        info!("Project installed successfully.");
     }
 
     // 'b' is for 'Build' folder and 'i' is for 'Install' folder in the working directory.
@@ -93,7 +148,7 @@ pub fn run(args: BuildArgs) {
 fn check_build_type(args: &BuildArgs) {
     // If none are set, throw an error
     if !(args.debug_build_type || args.release_build_type) {
-        error!("Build type not set. Use 'build --set-build-type <type>' to set the build type.");
+        error!("Build type not set. Pass the appropriate flag (-r or -d).");
         RuntimeErrors::BuildTypeNotSet.exit();
     }
     // If both are set, throw an error
@@ -110,8 +165,8 @@ fn generate_cmake_project(settings: &mut Settings, system_type: &str, build_type
 
     // If system_type is "nt/msvc", then the toolchain path must be set.
     if system_type == "nt/msvc" && toolchain_path.is_empty() {
-        info!(
-            "Please set the toolchain (VCPKG) path for system type 'nt/msvc', using 'setup --toolchain <path>'."
+        error!(
+            "Please set the toolchain (VCPKG) path for system type 'nt/msvc', using 'setup --toolchain <path>' or 'setup -a'."
         );
         RuntimeErrors::GenerateProjectNtMsvcNoToolchain.exit();
     }
@@ -124,11 +179,11 @@ fn generate_cmake_project(settings: &mut Settings, system_type: &str, build_type
     settings.cmake_system_type = system_type.to_string();
     settings.cmake_build_type = build_type.to_string();
     settings.last_cmake_configuration_command = preset.clone();
-    settings.save_default();
+    let _ = settings.save_default();
 
-    cmd::execute(preset);
+    cmd::execute_and_display_output(preset);
 
-    debug!("Settings: {:?}", settings);
+    debug!("Settings: {:#?}", settings);
 }
 
 fn generate_preset(
@@ -177,7 +232,8 @@ fn generate_preset(
             ]
         }
         _ => {
-            eprintln!("Invalid system type: {}", system_type);
+            error!("Invalid system type: {}", system_type);
+            RuntimeErrors::GenerateProjectInvalidSystemType(Some(system_type.to_string())).exit();
             vec![]
         }
     }
@@ -186,7 +242,7 @@ fn generate_preset(
 fn build_cmake_project(settings: &Settings, build_type: &str) {
     let build_dir = settings.build_dir.clone();
 
-    cmd::execute(
+    cmd::execute_and_display_output(
         vec![
             "cmake".to_string(),
             "--build".to_string(),
@@ -200,7 +256,7 @@ fn build_cmake_project(settings: &Settings, build_type: &str) {
 fn install_cmake_project(settings: &Settings, build_type: &str) {
     let build_dir = settings.build_dir.clone();
 
-    cmd::execute(
+    cmd::execute_and_display_output(
         vec![
             "cmake".to_string(),
             "--install".to_string(),
@@ -246,7 +302,7 @@ fn clean_cmake_project(settings: &Settings, what_to_clean: &str) {
                 info!("Successfully removed the 'Build' directory.");
             }
             Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
-                info!("The build directory does not exist. Skipping this step.");
+                warn!("The build directory does not exist. Skipping this step.");
             }
             Err(e) => {
                 error!("Error removing the 'Build' directory: {}", e);
@@ -260,7 +316,7 @@ fn clean_cmake_project(settings: &Settings, what_to_clean: &str) {
                 info!("Successfully removed the 'Install' directory.");
             }
             Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
-                info!("The install directory does not exist. Skipping this step.");
+                warn!("The install directory does not exist. Skipping this step.");
             }
             Err(e) => {
                 error!("Error removing the 'Install' directory: {}", e);
@@ -271,7 +327,10 @@ fn clean_cmake_project(settings: &Settings, what_to_clean: &str) {
 
 // Creates symlinks for all files in a given directory recursively.
 // TODO: This needs more testing and development to be used in the project.
+#[allow(dead_code)]
 fn create_symlinks(src_dir: &Path, target_dir: &Path) -> std::io::Result<()> {
+    RuntimeErrors::NotImplemented.exit();
+
     for entry in WalkDir::new(src_dir) {
         let entry = entry?;
         let path = entry.path();
@@ -293,8 +352,8 @@ fn create_symlinks(src_dir: &Path, target_dir: &Path) -> std::io::Result<()> {
 
             // Create the symlink
             match std::os::windows::fs::symlink_file(path, &target_path) {
-                Ok(_) => println!("Symlink created for {:?}", path),
-                Err(e) => eprintln!("Failed to create symlink for {:?}: {}", path, e),
+                Ok(_) => info!("Symlink created for {:?}", path),
+                Err(e) => error!("Failed to create symlink for {:?}: {}", path, e),
             }
         }
     }

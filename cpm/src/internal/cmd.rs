@@ -13,12 +13,12 @@ fn init(cmd_array: Vec<String>) -> String {
     check_supported_os(&settings)
 }
 
-pub fn execute(cmd_array: Vec<String>) {
+pub fn execute_and_display_output(cmd_array: Vec<String>) {
     if cmd_array.is_empty() {
         RuntimeErrors::NoCommandsProvided.exit();
     }
 
-    debug!("Executing command: {}", cmd_array.join(" "));
+    trace!("Executing command: {}", cmd_array.join(" "));
 
     match init(cmd_array.clone()).as_str() {
         "windows" => {
@@ -35,13 +35,52 @@ pub fn execute(cmd_array: Vec<String>) {
                 let out = String::from_utf8_lossy(&output.stdout)
                     .trim_end_matches(|c| (c == '\r' || c == '\n'))
                     .to_string();
-                // info!("STDOUT:\n{}", out);
+                trace!("STDOUT:\n{}", out);
             }
             if !output.stderr.is_empty() {
                 let err = String::from_utf8_lossy(&output.stderr)
                     .trim_end_matches(|c| (c == '\r' || c == '\n'))
                     .to_string();
                 error!("STDERR:\n{}", err);
+                RuntimeErrors::CmdCaughtStdErr(Some(err));
+            }
+        }
+        _ => {
+            RuntimeErrors::NotSupportedOS(None).exit();
+        }
+    }
+}
+
+pub fn execute(cmd_array: Vec<String>) {
+    if cmd_array.is_empty() {
+        RuntimeErrors::NoCommandsProvided.exit();
+    }
+
+    trace!("Executing command: {}", cmd_array.join(" "));
+
+    match init(cmd_array.clone()).as_str() {
+        "windows" => {
+            let (command, args) = cmd_array.split_first().unwrap();
+
+            let output = Command::new("cmd")
+                .args(&["/C", command])
+                .args(args)
+                .output()
+                .expect("Failed to execute command");
+
+            // Remove all trailing newline characters
+            if !output.stdout.is_empty() {
+                let out = String::from_utf8_lossy(&output.stdout)
+                    .trim_end_matches(|c| (c == '\r' || c == '\n'))
+                    .to_string();
+                debug!("STDOUT:\n{}", out);
+            }
+            if !output.stderr.is_empty() {
+                let err = String::from_utf8_lossy(&output.stderr)
+                    .trim_end_matches(|c| (c == '\r' || c == '\n'))
+                    .to_string();
+                error!("STDERR:\n{}", err);
+                RuntimeErrors::CmdCaughtStdErr(Some(err));
             }
         }
         _ => {
@@ -55,7 +94,7 @@ pub fn execute_and_return_output(cmd_array: Vec<String>) -> String {
         RuntimeErrors::NoCommandsProvided.exit();
     }
 
-    debug!("Executing command: {}", cmd_array.join(" "));
+    trace!("Executing command: {}", cmd_array.join(" "));
 
     match init(cmd_array.clone()).as_str() {
         "windows" => {
@@ -72,13 +111,14 @@ pub fn execute_and_return_output(cmd_array: Vec<String>) -> String {
                 let out = String::from_utf8_lossy(&output.stdout)
                     .trim_end_matches(|c| (c == '\r' || c == '\n'))
                     .to_string();
-                // info!("STDOUT:\n{}", out);
+                debug!("STDOUT:\n{}", out);
             }
             if !output.stderr.is_empty() {
                 let err = String::from_utf8_lossy(&output.stderr)
                     .trim_end_matches(|c| (c == '\r' || c == '\n'))
                     .to_string();
                 error!("STDERR:\n{}", err);
+                RuntimeErrors::CmdCaughtStdErr(Some(err));
             }
 
             // Before we return the string we must make sure to remove the trailing newline character (\r\n)

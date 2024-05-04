@@ -47,10 +47,10 @@ impl Settings {
             .map(|s| s.to_string())
             .unwrap_or_default();
 
-        let working_dir = std::env
+        /*let working_dir = std::env
             ::current_dir()?
             .to_str()
-            .map(|s| s.to_string());
+            .map(|s| s.to_string());*/
         Ok(Settings {
             os: std::env::consts::OS.to_string(),
             os_release: sys_info::os_type().unwrap_or_default(),
@@ -196,7 +196,7 @@ impl Settings {
             }
         }
 
-        self.save_default();
+        let _ = self.save_default();
         Ok(())
     }
 

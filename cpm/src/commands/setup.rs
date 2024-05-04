@@ -10,7 +10,7 @@ use crate::internal::cmd;
 use crate::internal::install::Config;
 
 pub fn run(args: SetupArgs) {
-    trace!("Running the Initialization command with arguments: {:#?}", args);
+    debug!("Running the Initialization command with arguments: {:#?}", args);
 
     // Grab the settings file as it will be needed for the subcommands.
     let settings_path = match Settings::get_settings_path() {
@@ -31,7 +31,6 @@ pub fn run(args: SetupArgs) {
 
     // If not initialized, throw an error
     if !settings.initialized {
-        error!("Project not initialized. Run 'init' command first.");
         RuntimeErrors::ProjectNotInitialized.exit();
     }
 
@@ -72,6 +71,8 @@ pub fn run(args: SetupArgs) {
         }
     }
 
+    debug!("Selected OS: {}", selected_os);
+
     if let Some(toolchain_path) = &args.toolchain {
         debug!("Path before trim: {}", toolchain_path);
         // If the provided path has any '/' or '\' characters at the very end, remove them
@@ -83,17 +84,18 @@ pub fn run(args: SetupArgs) {
     }
     // Auto detect toolchain and run setup.
     if args.auto_toolchain_path {
-        auto_toolchain_path(&mut settings, &config);
+        auto_toolchain_path(&mut settings, &config, &selected_os);
+
+        return;
     }
     // Auto detect toolchain and run setup otherwise manually set up toolchain.
     if args.no_toolchain_path {
+        return;
     }
     // Use provided path and try to run setup.
     if let Some(toolchain_path) = &args.use_toolchain_path {
+        return;
     }
-
-    // debug!("Config:\n{:#?}", Config);
-    // debug!("OS: {}", selected_os);
 }
 
 fn retrieve_install(file_path: &Path) -> Result<Config, Box<dyn std::error::Error>> {
@@ -137,7 +139,7 @@ fn check_toolchain(settings: &mut Settings) {
                 if Path::new(&vcpkg_cmake_path).exists() {
                     info!("Detected VCPKG CMake toolchain file: {}", vcpkg_cmake_path);
                     settings.vcpkg_path = vcpkg_cmake_path;
-                    settings.save_default();
+                    let _ = settings.save_default();
                 } else {
                     error!("VCPKG CMake toolchain file not found at: {}", vcpkg_cmake_path);
                     RuntimeErrors::ToolchainNotFound("VCPKG".to_string()).exit();
@@ -160,13 +162,13 @@ fn normalize_path_separator(path: &str) -> String {
     }
 }
 
-fn auto_toolchain_path(settings: &mut Settings, config: &Config) {
+fn auto_toolchain_path(settings: &mut Settings, config: &Config, os: &str) {
     info!("Auto detecting toolchain path");
 
     let mut skip_toolchain = false;
     // First check if the toolchain path is already set
     if !settings.toolchain_path.is_empty() {
-        debug!("Toolchain path already set: {}", settings.toolchain_path);
+        warn!("Toolchain path already set: {}", settings.toolchain_path);
         settings.using_toolchain = true;
         let _ = settings.save_default();
         skip_toolchain = true;
@@ -181,7 +183,7 @@ fn auto_toolchain_path(settings: &mut Settings, config: &Config) {
 
     // OS specific setup
 
-    match settings.os.as_str() {
+    match os {
         "windows" => {
             windows_install(settings, config);
         }
@@ -208,7 +210,7 @@ fn toolchain_usage(settings: &mut Settings, config: &Config) {
                     return;
                 }
 
-                debug!("Using Windows toolchain: {}", toolchain);
+                info!("Using Windows toolchain: {}", toolchain);
 
                 // Returns a trimmed string (without \r\n line endings)
                 let toolchain_path = cmd::execute_and_return_output(
@@ -221,6 +223,7 @@ fn toolchain_usage(settings: &mut Settings, config: &Config) {
                     // Remove '\\vcpkg.exe' from the path
                     let normalized_path = normalized_path.trim_end_matches("\\vcpkg.exe");
                     debug!("Normalized {} path: {}", toolchain.to_uppercase(), normalized_path);
+                    info!("Toolchain {} found: {}", toolchain.to_uppercase(), normalized_path);
 
                     settings.toolchain_path = normalized_path.to_string();
                     settings.using_toolchain = true;
@@ -266,6 +269,7 @@ fn windows_check_prerequisites(config: &Config) {
     // If needed have special mappings for specific prerequisites.
     // Example: To check cmake, we can use 'cmake --version' and check the output.
     // But the output has some additional text which we don't need.
+    info!("Checking prerequisites");
 
     // Retrieve prerequisites from the Config
     if let Some(windows_config) = &config.config.windows {
@@ -274,6 +278,7 @@ fn windows_check_prerequisites(config: &Config) {
 
         // If there are no prerequisites, return early
         if prereqs.is_empty() {
+            trace!("No prerequisistes found");
             return;
         }
 
@@ -326,6 +331,7 @@ fn windows_check_prerequisites(config: &Config) {
 fn windows_install_libraries(settings: &Settings, config: &Config) {
     // Nothing special here. We just run to toolchain commands (vcpkg install) against the specific triplet.
     // Of course we should check if the library is already installed beforehand.
+    info!("Checking packages to install");
 
     // Retrieve packages from the Config
     if let Some(windows_config) = &config.config.windows {
@@ -334,6 +340,7 @@ fn windows_install_libraries(settings: &Settings, config: &Config) {
 
         // If there are no packages, return early
         if packages.is_empty() {
+            trace!("No packages found");
             return;
         }
 
@@ -374,7 +381,7 @@ fn windows_install_libraries(settings: &Settings, config: &Config) {
 
 fn windows_post_install(settings: &Settings, config: &Config) {
     // Only specially integrated matches should be here.
-    info!("Running post install commands");
+    info!("Checking post install commands");
 
     // Retrieve packages from the Config
     if let Some(windows_config) = &config.config.windows {
@@ -383,7 +390,7 @@ fn windows_post_install(settings: &Settings, config: &Config) {
 
         // If there are no packages, return early
         if post_installs.is_empty() {
-            debug!("No post install commands found");
+            trace!("No post install commands found");
             return;
         }
 
