@@ -33,7 +33,28 @@ pub struct InitArgs {
 }
 
 #[derive(Parser, Debug)]
-pub struct SetupArgs {}
+pub struct SetupArgs {
+    /// Tries to find an existing toolchain installation if it is added to the path. Runs the setup.
+    /// Windows: uses where.exe to find toolchain.
+    #[clap(required = false, long, short, action = clap::ArgAction::SetTrue, verbatim_doc_comment)]
+    pub auto_toolchain_path: bool,
+    /// Tries to find an existing toolchain installation if it is added to the path, otherwise attempts to download and setup the toolchain. Runs the setup.
+    /// Windows: uses where.exe to find toolchain.
+    #[clap(required = false, long, short, action = clap::ArgAction::SetTrue, verbatim_doc_comment)]
+    pub no_toolchain_path: bool,
+    /// Runs the setup with the specified vcpkg directory. Must be set to root directory of the toolchain. Runs the setup.
+    #[clap(required = false, long, short, value_names = &["TOOLCHAIN-PATH"], verbatim_doc_comment)]
+    pub toolchain_path: Option<String>,
+    /// Skips package configuration when running 'auto_toolchain_path', 'no_toolchain_path', or 'toolchain_path'. Pass before running 'auto_toolchain_path', 'no_toolchain_path', or 'toolchain_path'.
+    #[clap(required = false, long = "spc", action = clap::ArgAction::SetTrue, verbatim_doc_comment)]
+    pub skip_package_configurations: bool,
+    /// Runs the setup without checking for runtime dependencies (ONLY FOR CI USE). Pass before running 'auto_toolchain_path', 'no_toolchain_path', or 'toolchain_path'.
+    #[clap(required = false, long = "ndc", action = clap::ArgAction::SetTrue, verbatim_doc_comment)]
+    pub no_deps_check: bool,
+    /// Forces vcpkg to install packages again (does not remove any existing packages). Pass before running 'auto_toolchain_path', 'no_toolchain_path', or 'toolchain_path'.
+    #[clap(required = false, long = "fpi", action = clap::ArgAction::SetTrue, verbatim_doc_comment)]
+    pub force_package_install: bool,
+}
 
 #[derive(Parser, Debug)]
 pub struct BuildArgs {
