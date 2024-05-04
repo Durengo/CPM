@@ -15,6 +15,8 @@ pub enum RuntimeErrors {
     // Setup Command related errors 31-40
     PrerequisiteNotFound(Option<String>),
     PackageInstallFailed(Option<String>),
+    PostInstallFailed(Option<String>),
+    PostInstallNoDefinition(Option<String>),
     // Build Command related errors 41-50
     GenerateProjectInvalidSystemType(Option<String>),
     GenerateProjectNtMsvcNoToolchain,
@@ -43,6 +45,8 @@ impl RuntimeErrors {
             // Setup Command related errors 31-40
             RuntimeErrors::PrerequisiteNotFound(_) => 31,
             RuntimeErrors::PackageInstallFailed(_) => 32,
+            RuntimeErrors::PostInstallFailed(_) => 33,
+            RuntimeErrors::PostInstallNoDefinition(_) => 34,
             // Build Command related errors 31-40
             RuntimeErrors::GenerateProjectInvalidSystemType(_) => 41,
             RuntimeErrors::GenerateProjectNtMsvcNoToolchain => 42,
@@ -93,6 +97,15 @@ impl RuntimeErrors {
                 format!("Failed to install package '{}'", package)
             }
             RuntimeErrors::PackageInstallFailed(None) => "Failed to install package".to_string(),
+            RuntimeErrors::PostInstallFailed(Some(post_install)) => {
+                format!("Post install failed: {}", post_install)
+            }
+            RuntimeErrors::PostInstallFailed(None) => "Post install failed".to_string(),
+            RuntimeErrors::PostInstallNoDefinition(Some(post_install)) => {
+                format!("Post install '{}' has no definition", post_install)
+            }
+            RuntimeErrors::PostInstallNoDefinition(None) =>
+                "Post install has no definition".to_string(),
             // Build Command related errors 31-40
             RuntimeErrors::GenerateProjectInvalidSystemType(Some(system_type)) => {
                 format!("The system type '{}' is invalid", system_type)

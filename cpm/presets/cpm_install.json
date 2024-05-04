@@ -14,7 +14,8 @@
                 }
             ],
             "post_install": [
-                ""
+                "vcpkg_integrate_install",
+                "vcpkg_configure_package_boost"
             ]
         },
         "linux": {

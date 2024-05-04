@@ -269,6 +269,7 @@ fn windows_install(settings: &Settings, config: &Config) {
 
     windows_check_prerequisites(config);
     windows_install_libraries(settings, config);
+    windows_post_install(settings, config);
 }
 
 fn windows_check_prerequisites(config: &Config) {
@@ -376,6 +377,50 @@ fn windows_install_libraries(settings: &Settings, config: &Config) {
                 }
             } else {
                 info!("Package already installed: {}", package.library);
+            }
+        }
+    }
+}
+
+fn windows_post_install(settings: &Settings, config: &Config) {
+    // Only specially integrated matches should be here.
+    info!("Running post install commands");
+
+    // Retrieve packages from the Config
+    if let Some(windows_config) = &config.config.windows {
+        // Use windows_config by reference
+        let post_installs = &windows_config.post_install;
+
+        // If there are no packages, return early
+        if post_installs.is_empty() {
+            debug!("No post install commands found");
+            return;
+        }
+
+        // Iterate over each package
+        for post_install in post_installs {
+            match post_install.as_str() {
+                // "intergrate_vcpkg"
+                "vcpkg_integrate_install" => {
+                    // Retrieve vcpkg exe from settings
+                    // Combine with "/vcpkg.exe"
+                    let vcpkg_exe = format!("{}\\vcpkg.exe", settings.toolchain_path);
+
+                    let output = cmd::execute_and_return_output(
+                        vec![vcpkg_exe.to_string(), "integrate".to_string(), "install".to_string()]
+                    );
+                    if output.is_empty() {
+                        RuntimeErrors::PostInstallFailed(
+                            Some("vcpkg_integrate_install".to_string())
+                        ).exit();
+                    } else {
+                        info!("Post install: {}", "vcpkg_integrate_install");
+                    }
+                }
+                _ => {
+                    // No exit here as it's not a critical error.
+                    RuntimeErrors::PostInstallNoDefinition(Some(post_install.to_string()));
+                }
             }
         }
     }
