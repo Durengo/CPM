@@ -5,8 +5,11 @@ use shellwords::split;
 use crate::errors::errors::RuntimeErrors;
 use crate::internal::settings::Settings;
 
-fn init() -> String {
+fn init(cmd_array: Vec<String>) -> String {
     let mut settings = Settings::init(false).unwrap();
+
+    settings.last_command = cmd_array;
+    let _ = settings.save_default();
 
     check_supported_os(&settings)
 }
@@ -18,7 +21,7 @@ pub fn execute(cmd_array: Vec<String>) {
 
     info!("Executing command: {}", cmd_array.join(" "));
 
-    match init().as_str() {
+    match init(cmd_array.clone()).as_str() {
         "windows" => {
             let (command, args) = cmd_array.split_first().unwrap();
 

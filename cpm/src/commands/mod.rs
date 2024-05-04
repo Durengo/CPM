@@ -1,14 +1,11 @@
 use clap::Parser;
 
-pub mod version;
 pub mod init;
 pub mod build;
 pub mod cache;
 
 #[derive(Parser)]
 pub enum Commands {
-    /// Run the 'version' command
-    Version(VersionArgs),
     /// Initialize CPM in the current directory
     Init(InitArgs),
     /// Build CPM in the current directory
@@ -16,9 +13,6 @@ pub enum Commands {
     /// Manage CPM Cache
     Cache(CacheArgs),
 }
-
-#[derive(Parser, Debug)]
-pub struct VersionArgs {}
 
 #[derive(Parser, Debug)]
 pub struct InitArgs {

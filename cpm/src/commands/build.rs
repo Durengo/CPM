@@ -31,6 +31,12 @@ pub fn run(args: BuildArgs) {
         }
     };
 
+    // If not initialized, throw an error
+    if !settings.initialized {
+        error!("Project not initialized. Run 'init' command first.");
+        RuntimeErrors::ProjectNotInitialized.exit();
+    }
+
     if let Some(toolchain_path) = &args.toolchain {
         settings.toolchain_path = toolchain_path.to_string();
         check_toolchain(&mut settings);

@@ -18,6 +18,7 @@ pub enum RuntimeErrors {
     BuildTypeNotSet,
     BuildTypeBothSet,
     InvalidCleanCommand(char),
+    ProjectNotInitialized,
     // Not implemented 1000-1005
     NotImplemented,
 }
@@ -41,6 +42,7 @@ impl RuntimeErrors {
             RuntimeErrors::BuildTypeNotSet => 34,
             RuntimeErrors::BuildTypeBothSet => 35,
             RuntimeErrors::InvalidCleanCommand(_) => 36,
+            RuntimeErrors::ProjectNotInitialized => 37,
             // Not implemented 1000-1005
             RuntimeErrors::NotImplemented => 1000,
         }
@@ -88,6 +90,7 @@ impl RuntimeErrors {
             RuntimeErrors::InvalidCleanCommand(command) => {
                 format!("Invalid clean command: {}", command)
             }
+            RuntimeErrors::ProjectNotInitialized => "The project is not initialized".to_string(),
             // Not implemented 1000-1005
             RuntimeErrors::NotImplemented => "This feature is not implemented".to_string(),
         }

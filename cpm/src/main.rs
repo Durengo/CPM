@@ -42,7 +42,6 @@ fn main() {
     debug!("Settings: {:?}", settings);
 
     match cli.command {
-        Some(commands::Commands::Version(add_args)) => commands::version::run(add_args),
         Some(commands::Commands::Init(add_args)) => commands::init::run(add_args, cli.no_init),
         Some(commands::Commands::Build(add_args)) => {
             if settings.initialized == false {

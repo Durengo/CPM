@@ -27,6 +27,7 @@ pub struct Settings {
     pub cmake_build_type: String,
     // Cached commands
     pub last_cmake_configuration_command: Vec<String>,
+    pub last_command: Vec<String>,
 }
 
 impl Settings {
@@ -69,6 +70,7 @@ impl Settings {
             cmake_build_type: "".to_string(),
             // Cached commands
             last_cmake_configuration_command: vec![],
+            last_command: vec![],
         })
     }
 
@@ -134,6 +136,7 @@ impl Settings {
             "vcpkg_path" => Some(self.vcpkg_path.clone()),
             "cmake_system_type" => Some(self.cmake_system_type.clone()),
             "cmake_build_type" => Some(self.cmake_build_type.clone()),
+            // Cached commands are locked
             _ => None,
         }
     }
@@ -179,6 +182,7 @@ impl Settings {
             "cmake_build_type" => {
                 self.cmake_build_type = value;
             }
+            // Cached commands are locked
             _ => {
                 return Err("Key not found".to_string());
             }
@@ -202,7 +206,9 @@ impl Settings {
             | "toolchain_path"
             | "vcpkg_path"
             | "cmake_system_type"
-            | "cmake_build_type" => true,
+            | "cmake_build_type"
+            | "last_cmake_configuration_command"
+            | "last_command" => true,
             _ => false,
         }
     }
