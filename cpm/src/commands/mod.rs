@@ -151,4 +151,8 @@ pub struct CacheArgs {
     #[clap(required = false, long, short, action = clap::ArgAction::SetTrue, verbatim_doc_comment)]
     // No value needed
     pub open_cache: bool,
+
+    /// Disable all logging and return only the value. Useful for scripts. Provide this as a flag before using 'print_cache'
+    #[clap(required = false, long, short, action = clap::ArgAction::SetTrue, verbatim_doc_comment)]
+    pub raw_return: bool,
 }

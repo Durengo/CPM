@@ -30,7 +30,12 @@ pub fn run(args: CacheArgs) {
         match printing {
             Some(key) => {
                 if settings.contains_key(key) {
-                    info!("{}: {}", key, settings.get_value(key).unwrap_or("None".to_string()));
+                    let value = settings.get_value(key).unwrap_or("None".to_string());
+                    if args.raw_return {
+                        println!("{}", value);
+                    } else {
+                        info!("{}: {}", key, value);
+                    }
                 } else {
                     error!("Key '{}' not found in cache", key);
                 }
