@@ -11,10 +11,11 @@ Cmake Project Manager - automate cmake build commands, generate CMakeLists files
 
 ## Installation
 
-1. Clone this repository where you are planning to use CPM.
-2. CD into the root of **your** project
-3. *Execute the ``cpm.exe init`` from the project as working directory
-4. Test by running: ``./cpm -V``
+1. Download the [alpha binaries](https://github.com/Durengo/CPM/releases/tag/alpha)
+2. Extract it into your project like <PROJECT_ROOT>/CPM
+3. CD into the root of **your** project
+4. *Execute the ``cpm.exe init`` from the project as working directory
+5. Test by running: ``./cpm -V``
 
 Output:
 
