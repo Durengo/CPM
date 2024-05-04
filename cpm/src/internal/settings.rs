@@ -111,6 +111,7 @@ impl Settings {
     }
 
     // Saves the settings to the default path '<exe_dir>/settings.json'
+    // This should be called when we are sure that the settings file exists
     pub fn save_default(&self) -> io::Result<()> {
         let path = Self::get_settings_path()?;
         self.save(&path)
