@@ -19,10 +19,12 @@ pub struct Settings {
     // Required for building project
     pub build_dir: String,
     pub install_dir: String,
+    pub using_toolchain: bool,
     pub toolchain_path: String,
     // WINDOWS ONLY - VCPKG CMAKE TOOLCHAIN
     // <toolchain_path>/scripts/buildsystems/vcpkg.cmake
     pub vcpkg_path: String,
+    // WINDOWS ONLY - VCPKG CMAKE TOOLCHAIN
     pub cmake_system_type: String,
     pub cmake_build_type: String,
     // Cached commands
@@ -62,10 +64,12 @@ impl Settings {
             // Required for building project
             build_dir: "".to_string(),
             install_dir: "".to_string(),
+            using_toolchain: false,
             toolchain_path: "".to_string(),
             // WINDOWS ONLY - VCPKG CMAKE TOOLCHAIN
             // <toolchain_path>/scripts/buildsystems/vcpkg.cmake
             vcpkg_path: "".to_string(),
+            // WINDOWS ONLY - VCPKG CMAKE TOOLCHAIN
             cmake_system_type: "".to_string(),
             cmake_build_type: "".to_string(),
             // Cached commands
@@ -132,6 +136,7 @@ impl Settings {
             "install_json_path" => Some(self.install_json_path.clone()),
             "build_dir" => Some(self.build_dir.clone()),
             "install_dir" => Some(self.install_dir.clone()),
+            "using_toolchain" => Some(self.using_toolchain.to_string()),
             "toolchain_path" => Some(self.toolchain_path.clone()),
             "vcpkg_path" => Some(self.vcpkg_path.clone()),
             "cmake_system_type" => Some(self.cmake_system_type.clone()),
@@ -170,6 +175,9 @@ impl Settings {
             "install_dir" => {
                 self.install_dir = value;
             }
+            "using_toolchain" => {
+                self.using_toolchain = value.parse().unwrap_or(false);
+            }
             "toolchain_path" => {
                 self.toolchain_path = value;
             }
@@ -203,6 +211,7 @@ impl Settings {
             | "install_json_path"
             | "build_dir"
             | "install_dir"
+            | "using_toolchain"
             | "toolchain_path"
             | "vcpkg_path"
             | "cmake_system_type"

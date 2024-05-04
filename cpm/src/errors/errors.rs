@@ -7,11 +7,13 @@ pub enum RuntimeErrors {
     WorkingDirSameAsExePath(String, String),
     // JSON file related errors 10-10
     JSONFileNotFound(Option<String>),
+    ConfigParseError(Option<String>),
     // Logic related errors 21-30
     NoInitFlagSet,
     NotInitialized,
     NoCommandsProvided,
     // Setup Command related errors 31-40
+    PrerequisiteNotFound(Option<String>),
     // Build Command related errors 41-50
     GenerateProjectInvalidSystemType(Option<String>),
     GenerateProjectNtMsvcNoToolchain,
@@ -32,11 +34,14 @@ impl RuntimeErrors {
             RuntimeErrors::WorkingDirSameAsExePath(_, _) => 2,
             // JSON file related errors 10-20
             RuntimeErrors::JSONFileNotFound(_) => 2,
+            RuntimeErrors::ConfigParseError(_) => 3,
             // Logic related errors 21-30
             RuntimeErrors::NoInitFlagSet => 21,
             RuntimeErrors::NotInitialized => 22,
             RuntimeErrors::NoCommandsProvided => 23,
             // Setup Command related errors 31-40
+            RuntimeErrors::PrerequisiteNotFound(_) => 31,
+            // Build Command related errors 31-40
             RuntimeErrors::GenerateProjectInvalidSystemType(_) => 41,
             RuntimeErrors::GenerateProjectNtMsvcNoToolchain => 42,
             RuntimeErrors::ToolchainNotFound(_) => 43,
@@ -68,12 +73,21 @@ impl RuntimeErrors {
                 format!("The JSON file was not found: {}", message)
             }
             RuntimeErrors::JSONFileNotFound(None) => "The JSON file was not found".to_string(),
+            RuntimeErrors::ConfigParseError(Some(message)) => {
+                format!("Error parsing the config file: {}", message)
+            }
+            RuntimeErrors::ConfigParseError(None) => "Error parsing the config file".to_string(),
             // Logic related errors 21-30
             RuntimeErrors::NoInitFlagSet =>
                 "The no-init flag was set. Do not run 'init' from entrypoint".to_string(),
             RuntimeErrors::NotInitialized => "The settings are not initialized".to_string(),
             RuntimeErrors::NoCommandsProvided => "No commands were provided".to_string(),
             // Setup Command related errors 31-40
+            RuntimeErrors::PrerequisiteNotFound(Some(prerequisite)) => {
+                format!("Prerequisite '{}' not found", prerequisite)
+            }
+            RuntimeErrors::PrerequisiteNotFound(None) => "Prerequisite not found".to_string(),
+            // Build Command related errors 31-40
             RuntimeErrors::GenerateProjectInvalidSystemType(Some(system_type)) => {
                 format!("The system type '{}' is invalid", system_type)
             }

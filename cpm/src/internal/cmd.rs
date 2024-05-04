@@ -31,11 +31,18 @@ pub fn execute(cmd_array: Vec<String>) {
                 .output()
                 .expect("Failed to execute command");
 
+            // Remove all trailing newline characters
             if !output.stdout.is_empty() {
-                info!("\n{}", String::from_utf8_lossy(&output.stdout));
+                let out = String::from_utf8_lossy(&output.stdout)
+                    .trim_end_matches(|c| (c == '\r' || c == '\n'))
+                    .to_string();
+                info!("STDOUT:\n{}", out);
             }
             if !output.stderr.is_empty() {
-                error!("\n{}", String::from_utf8_lossy(&output.stderr));
+                let err = String::from_utf8_lossy(&output.stderr)
+                    .trim_end_matches(|c| (c == '\r' || c == '\n'))
+                    .to_string();
+                error!("STDERR:\n{}", err);
             }
         }
         _ => {
@@ -61,14 +68,24 @@ pub fn execute_and_return_output(cmd_array: Vec<String>) -> String {
                 .output()
                 .expect("Failed to execute command");
 
+            // Remove all trailing newline characters
             if !output.stdout.is_empty() {
-                info!("\n{}", String::from_utf8_lossy(&output.stdout));
+                let out = String::from_utf8_lossy(&output.stdout)
+                    .trim_end_matches(|c| (c == '\r' || c == '\n'))
+                    .to_string();
+                info!("STDOUT:\n{}", out);
             }
             if !output.stderr.is_empty() {
-                error!("\n{}", String::from_utf8_lossy(&output.stderr));
+                let err = String::from_utf8_lossy(&output.stderr)
+                    .trim_end_matches(|c| (c == '\r' || c == '\n'))
+                    .to_string();
+                error!("STDERR:\n{}", err);
             }
 
-            String::from_utf8_lossy(&output.stdout).to_string()
+            // Before we return the string we must make sure to remove the trailing newline character (\r\n)
+            String::from_utf8_lossy(&output.stdout)
+                .trim_end_matches(|c| (c == '\r' || c == '\n'))
+                .to_string()
         }
         _ => {
             RuntimeErrors::NotSupportedOS(None).exit();
