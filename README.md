@@ -25,6 +25,11 @@ cpm 1.0.0
 
 <p>1* - Depending on the operating system an appropriate batch/shell script will be created. This is the entrypoint to the CPM program from the project root.</p>
 
+## Road to achieving CLI greatness
+
+* Generating CMake files.
+* Build specific executables.
+
 ## How to use
 
 CPM is divided into modules which expose specific functionality.
