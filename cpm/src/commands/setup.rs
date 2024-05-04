@@ -85,7 +85,7 @@ pub fn run(args: SetupArgs) {
     if let Some(toolchain_path) = &args.toolchain {
         debug!("Path before trim: {}", toolchain_path);
         // If the provided path has any '/' or '\' characters at the very end, remove them
-        let toolchain_path = toolchain_path.trim_end_matches(|c| c == '/' || c == '\\');
+        let toolchain_path = toolchain_path.trim_end_matches(|c| (c == '/' || c == '\\'));
         debug!("Path after trim: {}", toolchain_path);
         settings.toolchain_path = toolchain_path.to_string();
         check_toolchain(&mut settings);
@@ -93,6 +93,7 @@ pub fn run(args: SetupArgs) {
     }
     // Auto detect toolchain and run setup.
     if args.auto_toolchain_path {
+        auto_toolchain_path(&mut settings, &Config);
     }
     // Auto detect toolchain and run setup otherwise manually set up toolchain.
     if args.no_toolchain_path {
@@ -101,8 +102,8 @@ pub fn run(args: SetupArgs) {
     if let Some(toolchain_path) = &args.use_toolchain_path {
     }
 
-    debug!("Config:\n{:#?}", Config);
-    debug!("OS: {}", selected_os);
+    // debug!("Config:\n{:#?}", Config);
+    // debug!("OS: {}", selected_os);
 }
 
 fn retrieve_install(file_path: &Path) -> Result<Config, Box<dyn std::error::Error>> {
@@ -166,6 +167,61 @@ fn normalize_path_separator(path: &str) -> String {
     } else {
         // On non-Windows systems, just return the original
         path.to_string()
+    }
+}
+
+fn auto_toolchain_path(settings: &mut Settings, config: &Config) {
+    info!("Auto detecting toolchain path");
+    // First check if the toolchain path is already set
+    // if !settings.toolchain_path.is_empty() {
+    //     debug!("Toolchain path already set: {}", settings.toolchain_path);
+    //     return;
+    // }
+
+    // If not set we need to find the toolchain path. This is OS specific.
+    // Run commands to find the toolchain path.
+    // On Windows we can use 'where.exe' to find the path of a given executable.
+    match settings.os.as_str() {
+        "windows" => {
+            // We need to look at config file to see what toolchain to look for.
+            // Retrieve this from Config.windows.toolchain
+            let toolchain: &str;
+            if let Some(windows_config) = &config.config.windows {
+                // Use windows_config by reference
+                let toolchain = &windows_config.toolchain;
+                debug!("Using Windows toolchain: {}", toolchain);
+
+                let toolchain_path = cmd::execute_and_return_output(
+                    vec!["where".to_string(), toolchain.to_string()]
+                );
+                if !toolchain_path.is_empty() {
+                    debug!("{} path found: {}", toolchain.to_ascii_uppercase(), toolchain_path);
+                    // Remove the trailing newline character and set the toolchain path to the root folder (not .exe file)
+                    // Windows has \r\n line endings, so we need to trim both \r and \n
+                    let toolchain_path = toolchain_path.trim_end_matches(
+                        |c| (c == '\r' || c == '\n')
+                    );
+                    // Normalize the path to use consistent path separators
+                    let normalized_path = normalize_path_separator(&toolchain_path);
+                    // Remove '\\vcpkg.exe' from the path
+                    let normalized_path = normalized_path.trim_end_matches("\\vcpkg.exe");
+                    debug!("Normalized VCPKG path: {}", normalized_path);
+
+                    settings.toolchain_path = normalized_path.to_string();
+                    let _ = settings.save_default();
+                    // Now we have the path to the toolchain but still need to find the .cmake file. We already have a function for this.
+                    check_toolchain(settings);
+                } else {
+                    error!("VCPKG not found in PATH");
+                    RuntimeErrors::ToolchainNotFound("VCPKG".to_string()).exit();
+                }
+            } else {
+                error!("No Windows configuration found in the install config");
+            }
+        }
+        _ => {
+            RuntimeErrors::NotSupportedOS(Some(settings.os.to_string())).exit();
+        }
     }
 }
 

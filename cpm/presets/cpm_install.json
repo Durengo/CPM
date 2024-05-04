@@ -6,6 +6,7 @@
                 "git",
                 "cmake"
             ],
+            "toolchain": "vcpkg",
             "packages": [
                 {
                     "library": "test",
@@ -21,6 +22,7 @@
                 "gcc",
                 "make"
             ],
+            "toolchain": "",
             "instructions": [
                 "sudo apt-get install gcc",
                 "sudo apt-get install make"
@@ -31,6 +33,7 @@
                 "brew",
                 "xcode"
             ],
+            "toolchain": "",
             "setup_steps": [
                 "install brew",
                 "install xcode"

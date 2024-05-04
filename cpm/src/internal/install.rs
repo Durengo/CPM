@@ -19,6 +19,7 @@ pub struct MultiOSConfig {
 #[derive(Serialize, Deserialize, Debug)]
 pub struct WindowsConfig {
     pub prerequisites: Vec<String>,
+    pub toolchain: String,
     pub packages: Vec<Package>,
     pub post_install: Vec<String>,
 }
@@ -26,12 +27,14 @@ pub struct WindowsConfig {
 #[derive(Serialize, Deserialize, Debug)]
 pub struct LinuxConfig {
     pub dependencies: Vec<String>,
+    pub toolchain: String,
     pub instructions: Vec<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct MacOSConfig {
     pub tools: Vec<String>,
+    pub toolchain: String,
     pub setup_steps: Vec<String>,
 }
 
