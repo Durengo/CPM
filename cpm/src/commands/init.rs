@@ -1,4 +1,3 @@
-use serde::de;
 use spdlog::prelude::*;
 use std::fs::File;
 use std::io::Write;
@@ -7,7 +6,7 @@ use std::path::Path;
 use crate::commands::InitArgs;
 use crate::errors::errors::RuntimeErrors;
 use crate::internal::settings::Settings;
-use crate::internal::install::{ Presets, Config };
+use crate::internal::install::Presets;
 
 pub fn run(args: InitArgs, _no_init: bool) {
     debug!("Running the Initialization command with arguments: {:?}", args);

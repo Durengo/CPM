@@ -1,11 +1,8 @@
-use serde::de;
 use spdlog::prelude::*;
-use std::process::Command;
 
 use crate::commands::CacheArgs;
 use crate::errors::errors::RuntimeErrors;
 use crate::internal::settings::Settings;
-use crate::internal::install::{ Presets, Config };
 use crate::internal::cmd;
 
 pub fn run(args: CacheArgs) {

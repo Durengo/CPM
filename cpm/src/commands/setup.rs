@@ -3,7 +3,6 @@ use spdlog::prelude::*;
 use crate::commands::SetupArgs;
 use crate::errors::errors::RuntimeErrors;
 use crate::internal::settings::Settings;
-use crate::internal::install::{ Presets, Config };
 use crate::internal::cmd;
 
 pub fn run(args: SetupArgs) {
@@ -25,5 +24,4 @@ pub fn run(args: SetupArgs) {
             return;
         }
     };
-
 }
