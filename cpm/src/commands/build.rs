@@ -3,6 +3,7 @@ use spdlog::prelude::*;
 use std::fs::File;
 use std::io::Write;
 use std::path::Path;
+use walkdir::WalkDir;
 
 use crate::commands::BuildArgs;
 use crate::errors::errors::RuntimeErrors;
@@ -318,4 +319,36 @@ fn clean_cmake_project(settings: &Settings, what_to_clean: &str) {
             }
         }
     }
+}
+
+// Creates symlinks for all files in a given directory recursively.
+// TODO: This needs more testing and development to be used in the project.
+fn create_symlinks(src_dir: &Path, target_dir: &Path) -> std::io::Result<()> {
+    for entry in WalkDir::new(src_dir) {
+        let entry = entry?;
+        let path = entry.path();
+        if path.is_file() {
+            // Attempt to construct the target path for the symlink
+            let relative_path = match path.strip_prefix(src_dir) {
+                Ok(rel_path) => rel_path,
+                Err(e) => {
+                    // Convert the StripPrefixError to an io::Error
+                    return Err(std::io::Error::new(std::io::ErrorKind::Other, e));
+                }
+            };
+            let target_path = target_dir.join(relative_path);
+
+            // Ensure the target directory exists
+            if let Some(parent) = target_path.parent() {
+                std::fs::create_dir_all(parent)?;
+            }
+
+            // Create the symlink
+            match std::os::windows::fs::symlink_file(path, &target_path) {
+                Ok(_) => println!("Symlink created for {:?}", path),
+                Err(e) => eprintln!("Failed to create symlink for {:?}: {}", path, e),
+            }
+        }
+    }
+    Ok(())
 }

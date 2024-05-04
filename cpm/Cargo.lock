@@ -274,6 +274,7 @@ dependencies = [
  "shellwords",
  "spdlog-rs",
  "sys-info",
+ "walkdir",
 ]
 
 [[package]]
