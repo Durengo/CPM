@@ -29,7 +29,6 @@ pub fn run(args: BuildArgs) {
 
     // If not initialized, throw an error
     if !settings.initialized {
-        error!("Project not initialized. Run 'init' command first.");
         RuntimeErrors::ProjectNotInitialized.exit();
     }
 

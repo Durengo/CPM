@@ -124,7 +124,7 @@ impl RuntimeErrors {
             RuntimeErrors::InvalidCleanCommand(command) => {
                 format!("Invalid clean command: {}", command)
             }
-            RuntimeErrors::ProjectNotInitialized => "The project is not initialized".to_string(),
+            RuntimeErrors::ProjectNotInitialized => "Project not initialized, run 'init' command first".to_string(),
             // Not implemented 1000-1005
             RuntimeErrors::NotImplemented => "This feature is not implemented".to_string(),
         }
