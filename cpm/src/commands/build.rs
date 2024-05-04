@@ -32,6 +32,24 @@ pub fn run(args: BuildArgs) {
         RuntimeErrors::ProjectNotInitialized.exit();
     }
 
+    // 'b' is for 'Build' folder and 'i' is for 'Install' folder in the working directory.
+    // Both chars can be used to clean the respective folders.
+    // Example: 'bi' will clean both folders.
+    // Need to parse the string and clean the respective folders.
+    if let Some(maybe_what_to_clean) = &args.clean_project {
+        match maybe_what_to_clean {
+            Some(what_to_clean) if !what_to_clean.trim().is_empty() => {
+                clean_cmake_project(&settings, what_to_clean);
+            }
+            _ => {
+                warn!(
+                    "No arguments provided for cleaning. Cleaning both 'Build' and 'Install' folders."
+                );
+                clean_cmake_project(&settings, "bi");
+            }
+        }
+    }
+
     if let Some(maybe_generate_args) = &args.generate_project {
         check_build_type(&args);
 
@@ -134,14 +152,6 @@ pub fn run(args: BuildArgs) {
         install_cmake_project(&settings, build_type);
 
         info!("Project installed successfully.");
-    }
-
-    // 'b' is for 'Build' folder and 'i' is for 'Install' folder in the working directory.
-    // Both chars can be used to clean the respective folders.
-    // Example: 'bi' will clean both folders.
-    // Need to parse the string and clean the respective folders.
-    if let Some(what_to_clean) = &args.clean_project {
-        clean_cmake_project(&settings, what_to_clean);
     }
 }
 

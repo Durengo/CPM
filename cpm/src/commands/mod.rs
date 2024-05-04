@@ -87,6 +87,7 @@ pub struct BuildArgs {
     ///     nt/msvc     ---> Windows, MSVC compiler
     ///     unix/clang  ---> Unix, Clang compiler
     ///     unix/gcc    ---> Unix, GCC compiler
+    ///     NONE        ---> No system type. Uses last cached generate command.
     #[clap(
         required = false,
         long,
@@ -110,8 +111,15 @@ pub struct BuildArgs {
     /// (Combine characters to clean multiple things)
     ///     b   ---> Build directory
     ///     i   ---> Install directory
-    #[clap(required = false, long, short, value_names = &["WHAT_TO_CLEAN"], verbatim_doc_comment)]
-    pub clean_project: Option<String>,
+    #[clap(
+        required = false,
+        long,
+        short,
+        action = clap::ArgAction::Set,
+        value_names = &["WHAT_TO_CLEAN"],
+        verbatim_doc_comment
+    )]
+    pub clean_project: Option<Option<String>>,
 }
 
 #[derive(Parser, Debug)]
