@@ -1,26 +1,16 @@
-use rust_embed::RustEmbed;
 use spdlog::prelude::*;
 use std::fs::File;
 use std::io::Read;
 use std::path::Path;
-use serde::{ Serialize, Deserialize };
 
 use crate::commands::SetupArgs;
 use crate::errors::errors::RuntimeErrors;
-use crate::internal::settings::{ self, Settings };
+use crate::internal::settings::Settings;
 use crate::internal::cmd;
-use crate::internal::install::{
-    WindowsConfig,
-    LinuxConfig,
-    MacOSConfig,
-    Presets,
-    Config,
-    MultiOSConfig,
-    Package,
-};
+use crate::internal::install::Config;
 
 pub fn run(args: SetupArgs) {
-    debug!("Running the Initialization command with arguments: {:#?}", args);
+    trace!("Running the Initialization command with arguments: {:#?}", args);
 
     // Grab the settings file as it will be needed for the subcommands.
     let settings_path = match Settings::get_settings_path() {

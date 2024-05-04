@@ -39,7 +39,7 @@ fn main() {
     }
 
     check_supported_os(&settings);
-    debug!("Settings: {:#?}", settings);
+    // debug!("Settings: {:#?}", settings);
 
     match cli.command {
         Some(commands::Commands::Init(add_args)) => commands::init::run(add_args, cli.no_init),
@@ -68,7 +68,7 @@ fn check_supported_os(settings: &Settings) {
     match env.as_str() {
         "linux" => RuntimeErrors::NotSupportedOS(Some(env.to_string())).exit(),
         "macos" => RuntimeErrors::NotSupportedOS(Some(env.to_string())).exit(),
-        "windows" => info!("Running on Windows"),
+        "windows" => trace!("Running on Windows"),
         _ => RuntimeErrors::NotSupportedOS(Some(env.to_string())).exit(),
     }
 }

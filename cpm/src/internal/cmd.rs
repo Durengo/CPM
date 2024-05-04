@@ -1,6 +1,5 @@
 use std::process::Command;
 use spdlog::prelude::*;
-use shellwords::split;
 
 use crate::errors::errors::RuntimeErrors;
 use crate::internal::settings::Settings;

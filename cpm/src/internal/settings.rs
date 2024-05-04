@@ -3,7 +3,6 @@ use std::fs::{ self, File };
 use std::io::{ self, Read, Write };
 use std::path::Path;
 use std::path::PathBuf;
-use spdlog::prelude::*;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Settings {
