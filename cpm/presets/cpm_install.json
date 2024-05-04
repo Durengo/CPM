@@ -9,7 +9,7 @@
             "toolchain": "vcpkg",
             "packages": [
                 {
-                    "library": "test",
+                    "library": "gtest",
                     "triplet": "x64-windows"
                 }
             ],

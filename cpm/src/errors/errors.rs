@@ -14,6 +14,7 @@ pub enum RuntimeErrors {
     NoCommandsProvided,
     // Setup Command related errors 31-40
     PrerequisiteNotFound(Option<String>),
+    PackageInstallFailed(Option<String>),
     // Build Command related errors 41-50
     GenerateProjectInvalidSystemType(Option<String>),
     GenerateProjectNtMsvcNoToolchain,
@@ -41,6 +42,7 @@ impl RuntimeErrors {
             RuntimeErrors::NoCommandsProvided => 23,
             // Setup Command related errors 31-40
             RuntimeErrors::PrerequisiteNotFound(_) => 31,
+            RuntimeErrors::PackageInstallFailed(_) => 32,
             // Build Command related errors 31-40
             RuntimeErrors::GenerateProjectInvalidSystemType(_) => 41,
             RuntimeErrors::GenerateProjectNtMsvcNoToolchain => 42,
@@ -87,6 +89,10 @@ impl RuntimeErrors {
                 format!("Prerequisite '{}' not found", prerequisite)
             }
             RuntimeErrors::PrerequisiteNotFound(None) => "Prerequisite not found".to_string(),
+            RuntimeErrors::PackageInstallFailed(Some(package)) => {
+                format!("Failed to install package '{}'", package)
+            }
+            RuntimeErrors::PackageInstallFailed(None) => "Failed to install package".to_string(),
             // Build Command related errors 31-40
             RuntimeErrors::GenerateProjectInvalidSystemType(Some(system_type)) => {
                 format!("The system type '{}' is invalid", system_type)

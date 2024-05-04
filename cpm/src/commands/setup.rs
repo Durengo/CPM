@@ -268,6 +268,7 @@ fn windows_install(settings: &Settings, config: &Config) {
     debug!("Windows Config:\n{:#?}", windows_config);
 
     windows_check_prerequisites(config);
+    windows_install_libraries(settings, config);
 }
 
 fn windows_check_prerequisites(config: &Config) {
@@ -326,6 +327,55 @@ fn windows_check_prerequisites(config: &Config) {
                         info!("{} found: {}", prereq, prereq_path);
                     }
                 }
+            }
+        }
+    }
+}
+
+fn windows_install_libraries(settings: &Settings, config: &Config) {
+    // Nothing special here. We just run to toolchain commands (vcpkg install) against the specific triplet.
+    // Of course we should check if the library is already installed beforehand.
+
+    // Retrieve packages from the Config
+    if let Some(windows_config) = &config.config.windows {
+        // Use windows_config by reference
+        let packages = &windows_config.packages;
+
+        // If there are no packages, return early
+        if packages.is_empty() {
+            return;
+        }
+
+        // Retrieve vcpkg exe from settings
+        // Combine with "/vcpkg.exe"
+        let vcpkg_exe = format!("{}\\vcpkg.exe", settings.toolchain_path);
+
+        // Iterate over each package
+        for package in packages {
+            // Check if the package is already installed
+            let package_installed = cmd
+                ::execute_and_return_output(vec![vcpkg_exe.to_string(), "list".to_string()])
+                .contains(&package.library);
+
+            if !package_installed {
+                // Set triplet
+                let triplet = format!("--triplet={}", package.triplet);
+                // Install the package
+                let output = cmd::execute_and_return_output(
+                    vec![
+                        vcpkg_exe.to_string(),
+                        "install".to_string(),
+                        package.library.to_string(),
+                        triplet
+                    ]
+                );
+                if output.is_empty() {
+                    RuntimeErrors::PackageInstallFailed(Some(package.library.clone())).exit();
+                } else {
+                    info!("Installed package: {}", package.library);
+                }
+            } else {
+                info!("Package already installed: {}", package.library);
             }
         }
     }

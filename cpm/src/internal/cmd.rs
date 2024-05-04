@@ -19,7 +19,7 @@ pub fn execute(cmd_array: Vec<String>) {
         RuntimeErrors::NoCommandsProvided.exit();
     }
 
-    info!("Executing command: {}", cmd_array.join(" "));
+    debug!("Executing command: {}", cmd_array.join(" "));
 
     match init(cmd_array.clone()).as_str() {
         "windows" => {
@@ -36,7 +36,7 @@ pub fn execute(cmd_array: Vec<String>) {
                 let out = String::from_utf8_lossy(&output.stdout)
                     .trim_end_matches(|c| (c == '\r' || c == '\n'))
                     .to_string();
-                info!("STDOUT:\n{}", out);
+                // info!("STDOUT:\n{}", out);
             }
             if !output.stderr.is_empty() {
                 let err = String::from_utf8_lossy(&output.stderr)
@@ -56,7 +56,7 @@ pub fn execute_and_return_output(cmd_array: Vec<String>) -> String {
         RuntimeErrors::NoCommandsProvided.exit();
     }
 
-    info!("Executing command: {}", cmd_array.join(" "));
+    debug!("Executing command: {}", cmd_array.join(" "));
 
     match init(cmd_array.clone()).as_str() {
         "windows" => {
@@ -73,7 +73,7 @@ pub fn execute_and_return_output(cmd_array: Vec<String>) -> String {
                 let out = String::from_utf8_lossy(&output.stdout)
                     .trim_end_matches(|c| (c == '\r' || c == '\n'))
                     .to_string();
-                info!("STDOUT:\n{}", out);
+                // info!("STDOUT:\n{}", out);
             }
             if !output.stderr.is_empty() {
                 let err = String::from_utf8_lossy(&output.stderr)
