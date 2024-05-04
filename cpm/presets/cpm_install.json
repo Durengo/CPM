@@ -1,0 +1,44 @@
+{
+    "os_target": "windows",
+    "config": {
+        "windows": {
+            "prerequisites": [
+                "git",
+                "cmake"
+            ],
+            "toolchain": "vcpkg",
+            "packages": [
+                {
+                    "library": "gtest",
+                    "triplet": "x64-windows"
+                }
+            ],
+            "post_install": [
+                "vcpkg_integrate_install",
+                "vcpkg_configure_package_boost"
+            ]
+        },
+        "linux": {
+            "dependencies": [
+                "gcc",
+                "make"
+            ],
+            "toolchain": "",
+            "instructions": [
+                "sudo apt-get install gcc",
+                "sudo apt-get install make"
+            ]
+        },
+        "macos": {
+            "tools": [
+                "brew",
+                "xcode"
+            ],
+            "toolchain": "",
+            "setup_steps": [
+                "install brew",
+                "install xcode"
+            ]
+        }
+    }
+}

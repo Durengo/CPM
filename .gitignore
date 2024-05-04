@@ -1,1 +1,11 @@
 Cache
+cpm/target
+
+# Do not ignore
+!cpm/presets/*.json
+
+# Testing, debugging, and coverage
+cpm/test/manual/*
+!cpm/test/manual/CMakelists.txt
+!cpm/test/manual/main.cpp
+!cpm/test/manual/QUICK.md
