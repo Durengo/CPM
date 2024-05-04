@@ -39,7 +39,7 @@ fn main() {
     }
 
     check_supported_os(&settings);
-    debug!("Settings: {:?}", settings);
+    debug!("Settings: {:#?}", settings);
 
     match cli.command {
         Some(commands::Commands::Init(add_args)) => commands::init::run(add_args, cli.no_init),

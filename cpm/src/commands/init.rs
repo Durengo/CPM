@@ -9,7 +9,7 @@ use crate::internal::settings::Settings;
 use crate::internal::install::Presets;
 
 pub fn run(args: InitArgs, _no_init: bool) {
-    debug!("Running the Initialization command with arguments: {:?}", args);
+    debug!("Running the Initialization command with arguments: {:#?}", args);
     debug!("No init flag: {}", _no_init);
 
     if _no_init {

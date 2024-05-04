@@ -8,7 +8,7 @@ use crate::internal::settings::Settings;
 use crate::internal::cmd;
 
 pub fn run(args: BuildArgs) {
-    debug!("Running the Initialization command with arguments: {:?}", args);
+    debug!("Running the Initialization command with arguments: {:#?}", args);
 
     // Grab the settings file as it will be needed for the subcommands.
     let settings_path = match Settings::get_settings_path() {
@@ -31,11 +31,6 @@ pub fn run(args: BuildArgs) {
     if !settings.initialized {
         error!("Project not initialized. Run 'init' command first.");
         RuntimeErrors::ProjectNotInitialized.exit();
-    }
-
-    if let Some(toolchain_path) = &args.toolchain {
-        settings.toolchain_path = toolchain_path.to_string();
-        check_toolchain(&mut settings);
     }
 
     if let Some(generate_args) = &args.generate_project {
@@ -106,54 +101,6 @@ fn check_build_type(args: &BuildArgs) {
     if args.debug_build_type && args.release_build_type {
         error!("Both debug and release build types set. Use only one.");
         RuntimeErrors::BuildTypeBothSet.exit();
-    }
-}
-
-fn check_toolchain(settings: &mut Settings) {
-    // Run through a match of know toolchains and find their appropriate .cmake file.
-    // Current list of know toolchains:
-    // - VCPKG
-    if !settings.toolchain_path.is_empty() {
-        // Normalize the path to use consistent path separators
-        let normalized_path = normalize_path_separator(&settings.toolchain_path);
-
-        let toolchain_path = Path::new(&normalized_path);
-        let toolchain_root = toolchain_path
-            .file_name()
-            .map(|name| name.to_string_lossy())
-            .unwrap_or_default();
-
-        debug!("Toolchain root: {}", toolchain_root);
-
-        match toolchain_root.as_ref() {
-            "vcpkg" => {
-                let vcpkg_cmake_path =
-                    // Use backslashes for consistency in Windows
-                    format!("{}\\scripts\\buildsystems\\vcpkg.cmake", normalized_path);
-                if Path::new(&vcpkg_cmake_path).exists() {
-                    info!("Detected VCPKG CMake toolchain file: {}", vcpkg_cmake_path);
-                    settings.vcpkg_path = vcpkg_cmake_path;
-                    settings.save_default();
-                } else {
-                    error!("VCPKG CMake toolchain file not found at: {}", vcpkg_cmake_path);
-                    RuntimeErrors::ToolchainNotFound("VCPKG".to_string()).exit();
-                }
-            }
-            _ => {
-                error!("Toolchain '{}' not found", toolchain_root);
-                RuntimeErrors::ToolchainNotFound(toolchain_root.to_string()).exit();
-            }
-        }
-    }
-}
-
-fn normalize_path_separator(path: &str) -> String {
-    if cfg!(target_os = "windows") {
-        // Convert all forward slashes to backslashes on Windows
-        path.replace("/", "\\")
-    } else {
-        // On non-Windows systems, just return the original
-        path.to_string()
     }
 }
 

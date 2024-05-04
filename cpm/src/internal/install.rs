@@ -6,37 +6,37 @@ use serde::{ Deserialize, Serialize };
 pub struct Presets;
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Config {
-    os_target: String,
-    config: MultiOSConfig,
+    pub os_target: String,
+    pub config: MultiOSConfig,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct MultiOSConfig {
-    windows: Option<WindowsConfig>,
-    linux: Option<LinuxConfig>,
-    macos: Option<MacOSConfig>,
+    pub windows: Option<WindowsConfig>,
+    pub linux: Option<LinuxConfig>,
+    pub macos: Option<MacOSConfig>,
 }
 #[derive(Serialize, Deserialize, Debug)]
 pub struct WindowsConfig {
-    prerequisites: Vec<String>,
-    packages: Vec<Package>,
-    post_install: Vec<String>,
+    pub prerequisites: Vec<String>,
+    pub packages: Vec<Package>,
+    pub post_install: Vec<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct LinuxConfig {
-    dependencies: Vec<String>,
-    instructions: Vec<String>,
+    pub dependencies: Vec<String>,
+    pub instructions: Vec<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct MacOSConfig {
-    tools: Vec<String>,
-    setup_steps: Vec<String>,
+    pub tools: Vec<String>,
+    pub setup_steps: Vec<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Package {
-    library: String,
-    triplet: String,
+    pub library: String,
+    pub triplet: String,
 }

@@ -12,6 +12,7 @@ pub enum RuntimeErrors {
     NotInitialized,
     NoCommandsProvided,
     // Setup Command related errors 31-40
+    // Build Command related errors 41-50
     GenerateProjectInvalidSystemType(Option<String>),
     GenerateProjectNtMsvcNoToolchain,
     ToolchainNotFound(String),
@@ -36,13 +37,13 @@ impl RuntimeErrors {
             RuntimeErrors::NotInitialized => 22,
             RuntimeErrors::NoCommandsProvided => 23,
             // Setup Command related errors 31-40
-            RuntimeErrors::GenerateProjectInvalidSystemType(_) => 31,
-            RuntimeErrors::GenerateProjectNtMsvcNoToolchain => 32,
-            RuntimeErrors::ToolchainNotFound(_) => 33,
-            RuntimeErrors::BuildTypeNotSet => 34,
-            RuntimeErrors::BuildTypeBothSet => 35,
-            RuntimeErrors::InvalidCleanCommand(_) => 36,
-            RuntimeErrors::ProjectNotInitialized => 37,
+            RuntimeErrors::GenerateProjectInvalidSystemType(_) => 41,
+            RuntimeErrors::GenerateProjectNtMsvcNoToolchain => 42,
+            RuntimeErrors::ToolchainNotFound(_) => 43,
+            RuntimeErrors::BuildTypeNotSet => 44,
+            RuntimeErrors::BuildTypeBothSet => 45,
+            RuntimeErrors::InvalidCleanCommand(_) => 46,
+            RuntimeErrors::ProjectNotInitialized => 47,
             // Not implemented 1000-1005
             RuntimeErrors::NotImplemented => 1000,
         }
