@@ -16,14 +16,14 @@ struct Cli {
     command: Option<commands::Commands>,
 
     // Add a flag that if set it will not allow to call the init command. This is meant for when the entrypoint is created.
-    /// Do not run the 'init' command
-    #[clap(long, global = true, action = clap::ArgAction::SetTrue)]
+    /// Do not run the 'init' command. This is meant for when the entrypoint is created. Otherwise, the 'init' command will be run in commands that require it to be run beforehand.
+    #[clap(long, global = true, action = clap::ArgAction::SetTrue, verbatim_doc_comment)]
     pub no_init: bool,
 
     // TEST FLAG. DO NOT USE IN PRODUCTION.
-    // Force settings reinitialization
-    /// Force settings reinitialization
-    #[clap(long, short, global = true, action = clap::ArgAction::SetTrue)]
+    /// Force settings reinitialization.
+    /// WARNING: This will overwrite the current settings file. This will break the current state if already initialized in the current directory.
+    #[clap(long, short, global = true, action = clap::ArgAction::SetTrue, verbatim_doc_comment)]
     pub force_reinit: bool,
 }
 
