@@ -3,11 +3,14 @@ use clap::Parser;
 pub mod init;
 pub mod build;
 pub mod cache;
+pub mod setup;
 
 #[derive(Parser)]
 pub enum Commands {
     /// Initialize CPM in the current directory
     Init(InitArgs),
+    /// Setup CPM in the current directory
+    Setup(SetupArgs),
     /// Build CPM in the current directory
     Build(BuildArgs),
     /// Manage CPM Cache
@@ -28,6 +31,9 @@ pub struct InitArgs {
     // #[clap(long, short, required = true)]
     // pub config: String,
 }
+
+#[derive(Parser, Debug)]
+pub struct SetupArgs {}
 
 #[derive(Parser, Debug)]
 pub struct BuildArgs {

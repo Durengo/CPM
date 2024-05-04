@@ -43,6 +43,7 @@ fn main() {
 
     match cli.command {
         Some(commands::Commands::Init(add_args)) => commands::init::run(add_args, cli.no_init),
+        Some(commands::Commands::Setup(add_args)) => commands::setup::run(add_args),
         Some(commands::Commands::Build(add_args)) => {
             if settings.initialized == false {
                 RuntimeErrors::NotInitialized.exit();
