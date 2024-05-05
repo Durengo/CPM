@@ -29,6 +29,8 @@ pub struct Settings {
     // Cached commands
     pub last_cmake_configuration_command: Vec<String>,
     pub last_command: Vec<String>,
+    // Cached targets
+    pub cmake_targets: Vec<String>,
 }
 
 impl Settings {
@@ -74,6 +76,8 @@ impl Settings {
             // Cached commands
             last_cmake_configuration_command: vec![],
             last_command: vec![],
+            // Cached targets
+            cmake_targets: vec![],
         })
     }
 
@@ -217,7 +221,8 @@ impl Settings {
             | "cmake_system_type"
             | "cmake_build_type"
             | "last_cmake_configuration_command"
-            | "last_command" => true,
+            | "last_command"
+            | "cmake_targets" => true,
             _ => false,
         }
     }

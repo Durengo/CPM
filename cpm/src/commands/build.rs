@@ -1,11 +1,17 @@
 use spdlog::prelude::*;
 use std::path::Path;
 use walkdir::WalkDir;
+use std::fs;
 
 use crate::commands::BuildArgs;
 use crate::errors::errors::RuntimeErrors;
 use crate::internal::settings::Settings;
 use crate::internal::cmd;
+use crate::internal::codemodel_v2::{
+    CMakeAPIResponse,
+    generate_cmake_codemodel_v2,
+    find_codemodel_file,
+};
 
 pub fn run(args: BuildArgs) {
     debug!("Running the Initialization command with arguments: {:#?}", args);
@@ -61,6 +67,8 @@ pub fn run(args: BuildArgs) {
             "Release"
         };
 
+        generate_cmake_codemodel_v2(&settings);
+
         match maybe_generate_args {
             Some(generate_args) if !generate_args.trim().is_empty() => {
                 info!(
@@ -82,6 +90,8 @@ pub fn run(args: BuildArgs) {
                 }
             }
         }
+
+        cache_cmake_targets(&mut settings);
 
         // if generate_args.trim().is_empty() {
         //     warn!("No system type provided. Will attempt to use last cmake configuration command.");
@@ -153,6 +163,49 @@ pub fn run(args: BuildArgs) {
 
         info!("Project installed successfully.");
     }
+}
+
+fn cache_cmake_targets(settings: &mut Settings) {
+    info!("Caching CMake targets based on build type: {}", settings.cmake_build_type);
+
+    let reply_dir = Path::new(&settings.build_dir).join(".cmake/api/v1/reply");
+
+    let mut targets = Vec::new();
+
+    // Find the codemodel-v2-<RANDOM_HASH>.json file
+    match find_codemodel_file(&reply_dir) {
+        Ok(json_path) => {
+            match fs::read_to_string(&json_path) {
+                Ok(contents) => {
+                    let api_response: Result<CMakeAPIResponse, _> = serde_json::from_str(&contents);
+                    match api_response {
+                        Ok(response) => {
+                            // Filter configurations by the current build type
+                            response.configurations
+                                .iter()
+                                .filter(|config| config.name == settings.cmake_build_type)
+                                .flat_map(|config| &config.targets)
+                                .for_each(|target| {
+                                    // info!(
+                                    //     "Found target for {} build: {}",
+                                    //     settings.cmake_build_type,
+                                    //     target.name
+                                    // );
+                                    targets.push(target.name.clone());
+                                });
+                        }
+                        Err(e) => error!("Failed to parse JSON: {}", e),
+                    }
+                }
+                Err(e) => error!("Error reading JSON file: {}", e),
+            }
+        }
+        Err(e) => error!("Error finding JSON file: {}", e),
+    }
+
+    info!("Found targets for {} build: {:#?}", settings.cmake_build_type, targets);
+    settings.cmake_targets = targets;
+    let _ = settings.save_default();
 }
 
 fn check_build_type(args: &BuildArgs) {
