@@ -129,6 +129,13 @@ impl Settings {
         Ok(dir.join("settings.json"))
     }
 
+    pub fn delete(path: &Path) -> io::Result<()> {
+        match fs::remove_file(path) {
+            Ok(_) => { Ok(()) }
+            Err(e) => { Err(e) }
+        }
+    }
+
     pub fn get_value(&self, key: &str) -> Option<String> {
         match key {
             "os" => Some(self.os.clone()),

@@ -1,4 +1,5 @@
 use clap::{ CommandFactory, Parser };
+use internal::settings;
 use spdlog::prelude::*;
 
 use crate::errors::errors::RuntimeErrors;
@@ -39,11 +40,16 @@ fn main() {
 
     let cli = Cli::parse();
 
-    let mut settings = Settings::init(false).unwrap();
+    // let mut settings = Settings::init(false).unwrap();
+    let settings = check_cache(cli.force_reinit).unwrap();
 
-    if cli.force_reinit {
-        settings = Settings::init(true).unwrap();
-    }
+    // if cli.force_reinit {
+    //     // Extract the PathBuf if getting the settings path is successful, otherwise handle the error.
+    //     let settings_path = Settings::get_settings_path()?;
+    //     // Pass a reference to PathBuf (which coerces to &Path)
+    //     Settings::delete(&settings_path)?;
+    //     settings = Settings::init(true).unwrap();
+    // }
 
     check_supported_os(&settings);
     debug!("Settings:\n{:#?}", settings);
@@ -77,5 +83,17 @@ fn check_supported_os(settings: &Settings) {
         "macos" => RuntimeErrors::NotSupportedOS(Some(env.to_string())).exit(),
         "windows" => trace!("Running on Windows"),
         _ => RuntimeErrors::NotSupportedOS(Some(env.to_string())).exit(),
+    }
+}
+
+fn check_cache(reinit: bool) -> std::io::Result<Settings> {
+    if reinit {
+        let settings_path = Settings::get_settings_path()?;
+        Settings::delete(&settings_path)?;
+        let settings = Settings::init(true)?;
+        Ok(settings)
+    } else {
+        let settings = Settings::init(false)?;
+        Ok(settings)
     }
 }
