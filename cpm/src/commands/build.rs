@@ -163,10 +163,21 @@ pub fn run(args: BuildArgs) {
 
         info!("Project installed successfully.");
     }
+
+    if args.source_targets {
+        cache_cmake_targets(&mut settings);
+    }
 }
 
 fn cache_cmake_targets(settings: &mut Settings) {
     info!("Caching CMake targets based on build type: {}", settings.cmake_build_type);
+
+    // Double check that the build has been generated
+    // Simple check to see if the .cmake/api/v1/reply directory exists
+    if !Path::new(&settings.build_dir).join(".cmake/api/v1/reply").exists() {
+        error!("CMake project has not been generated. Run 'cpm build --generate-project' first.");
+        RuntimeErrors::CMakeProjectNotGenerated.exit();
+    }
 
     let reply_dir = Path::new(&settings.build_dir).join(".cmake/api/v1/reply");
 

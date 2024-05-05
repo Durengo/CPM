@@ -26,6 +26,7 @@ pub enum RuntimeErrors {
     BuildTypeBothSet,
     InvalidCleanCommand(char),
     ProjectNotInitialized,
+    CMakeProjectNotGenerated,
     // Not implemented 1000-1005
     NotImplemented,
 }
@@ -57,6 +58,7 @@ impl RuntimeErrors {
             RuntimeErrors::BuildTypeBothSet => 45,
             RuntimeErrors::InvalidCleanCommand(_) => 46,
             RuntimeErrors::ProjectNotInitialized => 47,
+            RuntimeErrors::CMakeProjectNotGenerated => 48,
             // Not implemented 1000-1005
             RuntimeErrors::NotImplemented => 1000,
         }
@@ -181,6 +183,9 @@ impl RuntimeErrors {
                     "|Error {}| Project not initialized, run 'init' command first",
                     self.error_code()
                 )
+            }
+            RuntimeErrors::CMakeProjectNotGenerated => {
+                format!("|Error {}| CMake project not generated", self.error_code())
             }
             // Not implemented 1000-1005
             RuntimeErrors::NotImplemented => {

@@ -120,6 +120,10 @@ pub struct BuildArgs {
         verbatim_doc_comment
     )]
     pub clean_project: Option<Option<String>>,
+
+    /// Source targets from CMake. Project must be generated first, otherwise it will fail.
+    #[clap(required = false, long, short, action = clap::ArgAction::SetTrue, verbatim_doc_comment)]
+    pub source_targets: bool,
 }
 
 #[derive(Parser, Debug)]
