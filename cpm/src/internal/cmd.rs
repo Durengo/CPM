@@ -39,7 +39,7 @@ pub fn execute_and_display_output_live(cmd_array: Vec<String>) {
     let stdout_handle = thread::spawn(move || {
         for line in stdout_reader.lines() {
             match line {
-                Ok(line) => trace!("{}", line),
+                Ok(line) => println!("{}", line),
                 Err(e) => error!("Error reading stdout: {}", e),
             }
         }
@@ -48,7 +48,7 @@ pub fn execute_and_display_output_live(cmd_array: Vec<String>) {
     let stderr_handle = thread::spawn(move || {
         for line in stderr_reader.lines() {
             match line {
-                Ok(line) => error!("{}", line),
+                Ok(line) => println!("{}", line),
                 Err(e) => error!("Error reading stderr: {}", e),
             }
         }
