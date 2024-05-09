@@ -84,7 +84,7 @@ pub fn run(args: BuildArgs) {
                 );
                 let last_cmd = &settings.last_cmake_configuration_command;
                 if !last_cmd.is_empty() {
-                    cmd::execute_and_display_output(last_cmd.clone());
+                    cmd::execute_and_display_output_live(last_cmd.clone());
                 } else {
                     error!("No previous CMake configuration command available.");
                 }
@@ -255,7 +255,7 @@ fn generate_cmake_project(settings: &mut Settings, system_type: &str, build_type
     settings.last_cmake_configuration_command = preset.clone();
     let _ = settings.save_default();
 
-    cmd::execute_and_display_output(preset);
+    cmd::execute_and_display_output_live(preset);
 
     debug!("Settings: {:#?}", settings);
 }
@@ -316,7 +316,7 @@ fn generate_preset(
 fn build_cmake_project(settings: &Settings, build_type: &str) {
     let build_dir = settings.build_dir.clone();
 
-    cmd::execute_and_display_output(
+    cmd::execute_and_display_output_live(
         vec![
             "cmake".to_string(),
             "--build".to_string(),
@@ -330,7 +330,7 @@ fn build_cmake_project(settings: &Settings, build_type: &str) {
 fn install_cmake_project(settings: &Settings, build_type: &str) {
     let build_dir = settings.build_dir.clone();
 
-    cmd::execute_and_display_output(
+    cmd::execute_and_display_output_live(
         vec![
             "cmake".to_string(),
             "--install".to_string(),
