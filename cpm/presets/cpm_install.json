@@ -21,9 +21,17 @@
         "linux": {
             "dependencies": [
                 "gcc",
-                "make"
+                "make",
+                "cmake",
+                "git"
             ],
             "toolchain": "",
+            "libraries": [
+                {
+                    "library": "gtest",
+                    "distribution": "arch"
+                }
+            ],
             "instructions": [
                 ""
             ]

@@ -28,6 +28,7 @@ pub struct WindowsConfig {
 pub struct LinuxConfig {
     pub dependencies: Vec<String>,
     pub toolchain: String,
+    pub libraries: Vec<Library>,
     pub instructions: Vec<String>,
 }
 
@@ -42,4 +43,10 @@ pub struct MacOSConfig {
 pub struct Package {
     pub library: String,
     pub triplet: String,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Library {
+    pub library: String,
+    pub distribution: String,
 }
