@@ -815,6 +815,20 @@ fn platform_match_packages(settings: &Settings, _config: &Config, package_list: 
                     info!("Xcode found: {}", xcode_version);
                 }
             }
+            "glad" => {
+
+                let glad_version = cmd::execute_and_return_output(vec![
+                    "glad".to_string(),
+                    "--quiet".to_string(),
+                    "--version".to_string(),
+                ]);
+                if glad_version.is_empty() {
+                    error!("GLAD not found. Please install GLAD and try again.");
+                    RuntimeErrors::PrerequisiteNotFound(Some("glad".to_string())).exit();
+                } else {
+                    info!("GLAD found: {}", glad_version);
+                }
+            }
             // Since the prerequisite is not in the mappings, just check if the executable exists
             _ => {
                 let package_path =
