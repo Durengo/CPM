@@ -1,11 +1,12 @@
-use std::process;
 use spdlog::prelude::*;
+use std::process;
 
 pub enum RuntimeErrors {
     // OS related errors 1-9
     NotSupportedOS(Option<String>),
     WorkingDirSameAsExePath(String, String),
     CmdCaughtStdErr(Option<String>),
+    UnsupportedLinuxDistribution(Option<String>),
     // JSON file related errors 10-10
     JSONFileNotFound(Option<String>),
     ConfigParseError(Option<String>),
@@ -38,6 +39,7 @@ impl RuntimeErrors {
             RuntimeErrors::NotSupportedOS(_) => 1,
             RuntimeErrors::WorkingDirSameAsExePath(_, _) => 2,
             RuntimeErrors::CmdCaughtStdErr(_) => 3,
+            RuntimeErrors::UnsupportedLinuxDistribution(_) => 4,
             // JSON file related errors 10-20
             RuntimeErrors::JSONFileNotFound(_) => 2,
             RuntimeErrors::ConfigParseError(_) => 3,
@@ -69,7 +71,11 @@ impl RuntimeErrors {
         match self {
             // OS related errors 1-9
             RuntimeErrors::NotSupportedOS(Some(message)) => {
-                format!("|Error {}| The OS is not supported: {}", self.error_code(), message)
+                format!(
+                    "|Error {}| The OS is not supported: {}",
+                    self.error_code(),
+                    message
+                )
             }
             RuntimeErrors::NotSupportedOS(None) => {
                 format!("|Error {}| The OS is not supported", self.error_code())
@@ -83,23 +89,51 @@ impl RuntimeErrors {
                 )
             }
             RuntimeErrors::CmdCaughtStdErr(Some(message)) => {
-                format!("|Error {}| Command caught stderr: {}", self.error_code(), message)
+                format!(
+                    "|Error {}| Command caught stderr: {}",
+                    self.error_code(),
+                    message
+                )
             }
             RuntimeErrors::CmdCaughtStdErr(None) => {
                 format!("|Error {}| Command caught stderr", self.error_code())
             }
+            RuntimeErrors::UnsupportedLinuxDistribution(Some(distribution)) => {
+                format!(
+                    "|Error {}| The Linux distribution '{}' is not supported",
+                    self.error_code(),
+                    distribution
+                )
+            }
+            RuntimeErrors::UnsupportedLinuxDistribution(None) => {
+                format!(
+                    "|Error {}| The Linux distribution is not supported",
+                    self.error_code()
+                )
+            }
             // JSON file related errors 10-10
             RuntimeErrors::JSONFileNotFound(Some(message)) => {
-                format!("|Error {}| The JSON file was not found: {}", self.error_code(), message)
+                format!(
+                    "|Error {}| The JSON file was not found: {}",
+                    self.error_code(),
+                    message
+                )
             }
             RuntimeErrors::JSONFileNotFound(None) => {
                 format!("|Error {}| The JSON file was not found", self.error_code())
             }
             RuntimeErrors::ConfigParseError(Some(message)) => {
-                format!("|Error {}| Error parsing the config file: {}", self.error_code(), message)
+                format!(
+                    "|Error {}| Error parsing the config file: {}",
+                    self.error_code(),
+                    message
+                )
             }
             RuntimeErrors::ConfigParseError(None) => {
-                format!("|Error {}| Error parsing the config file", self.error_code())
+                format!(
+                    "|Error {}| Error parsing the config file",
+                    self.error_code()
+                )
             }
             // Logic related errors 21-30
             RuntimeErrors::NoInitFlagSet => {
@@ -122,19 +156,31 @@ impl RuntimeErrors {
             }
             // Setup Command related errors 31-40
             RuntimeErrors::PrerequisiteNotFound(Some(prerequisite)) => {
-                format!("|Error {}| Prerequisite '{}' not found", self.error_code(), prerequisite)
+                format!(
+                    "|Error {}| Prerequisite '{}' not found",
+                    self.error_code(),
+                    prerequisite
+                )
             }
             RuntimeErrors::PrerequisiteNotFound(None) => {
                 format!("|Error {}| Prerequisite not found", self.error_code())
             }
             RuntimeErrors::PackageInstallFailed(Some(package)) => {
-                format!("|Error {}| Failed to install package '{}'", self.error_code(), package)
+                format!(
+                    "|Error {}| Failed to install package '{}'",
+                    self.error_code(),
+                    package
+                )
             }
             RuntimeErrors::PackageInstallFailed(None) => {
                 format!("|Error {}| Failed to install package", self.error_code())
             }
             RuntimeErrors::PostInstallFailed(Some(post_install)) => {
-                format!("|Error {}| Post install failed: {}", self.error_code(), post_install)
+                format!(
+                    "|Error {}| Post install failed: {}",
+                    self.error_code(),
+                    post_install
+                )
             }
             RuntimeErrors::PostInstallFailed(None) => {
                 format!("|Error {}| Post install failed", self.error_code())
@@ -147,7 +193,10 @@ impl RuntimeErrors {
                 )
             }
             RuntimeErrors::PostInstallNoDefinition(None) => {
-                format!("|Error {}| Post install has no definition", self.error_code())
+                format!(
+                    "|Error {}| Post install has no definition",
+                    self.error_code()
+                )
             }
             // Build Command related errors 31-40
             RuntimeErrors::GenerateProjectInvalidSystemType(Some(system_type)) => {
@@ -167,16 +216,27 @@ impl RuntimeErrors {
                 )
             }
             RuntimeErrors::ToolchainNotFound(toolchain) => {
-                format!("|Error {}| Toolchain '{}' not found", self.error_code(), toolchain)
+                format!(
+                    "|Error {}| Toolchain '{}' not found",
+                    self.error_code(),
+                    toolchain
+                )
             }
             RuntimeErrors::BuildTypeNotSet => {
                 format!("|Error {}| The build type was not set", self.error_code())
             }
             RuntimeErrors::BuildTypeBothSet => {
-                format!("|Error {}| Both debug and release build types set", self.error_code())
+                format!(
+                    "|Error {}| Both debug and release build types set",
+                    self.error_code()
+                )
             }
             RuntimeErrors::InvalidCleanCommand(command) => {
-                format!("|Error {}| Invalid clean command: {}", self.error_code(), command)
+                format!(
+                    "|Error {}| Invalid clean command: {}",
+                    self.error_code(),
+                    command
+                )
             }
             RuntimeErrors::ProjectNotInitialized => {
                 format!(
@@ -189,7 +249,10 @@ impl RuntimeErrors {
             }
             // Not implemented 1000-1005
             RuntimeErrors::NotImplemented => {
-                format!("|Error {}| This feature is not implemented", self.error_code())
+                format!(
+                    "|Error {}| This feature is not implemented",
+                    self.error_code()
+                )
             }
         }
     }
