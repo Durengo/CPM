@@ -16,10 +16,15 @@ use crate::internal::settings::Settings;
 const BUILD_DIR_NAME: &str = "Build";
 #[cfg(target_os = "linux")]
 const BUILD_DIR_NAME: &str = "build";
+#[cfg(target_os = "macos")]
+const BUILD_DIR_NAME: &str = "build";
+
 
 #[cfg(target_os = "windows")]
 const INSTALL_DIR_NAME: &str = "Install";
 #[cfg(target_os = "linux")]
+const INSTALL_DIR_NAME: &str = "install";
+#[cfg(target_os = "macos")]
 const INSTALL_DIR_NAME: &str = "install";
 
 pub fn run(args: BuildArgs) {
@@ -493,6 +498,20 @@ fn create_platform_specific_symlink(path: &Path, target_path: &Path) -> std::io:
 }
 
 #[cfg(target_os = "linux")]
+fn create_platform_specific_symlink(path: &Path, target_path: &Path) -> std::io::Result<()> {
+    match std::os::unix::fs::symlink(path, target_path) {
+        Ok(_) => {
+            info!("Symlink created for {:?}", path);
+            Ok(())
+        }
+        Err(e) => {
+            error!("Failed to create symlink for {:?}: {}", path, e);
+            Err(e)
+        }
+    }
+}
+
+#[cfg(target_os = "macos")]
 fn create_platform_specific_symlink(path: &Path, target_path: &Path) -> std::io::Result<()> {
     match std::os::unix::fs::symlink(path, target_path) {
         Ok(_) => {

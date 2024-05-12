@@ -8,6 +8,21 @@ use crate::errors::errors::RuntimeErrors;
 use crate::internal::install::Presets;
 use crate::internal::settings::Settings;
 
+#[cfg(target_os = "windows")]
+const BUILD_DIR_NAME: &str = "Build";
+#[cfg(target_os = "linux")]
+const BUILD_DIR_NAME: &str = "build";
+#[cfg(target_os = "macos")]
+const BUILD_DIR_NAME: &str = "build";
+
+
+#[cfg(target_os = "windows")]
+const INSTALL_DIR_NAME: &str = "Install";
+#[cfg(target_os = "linux")]
+const INSTALL_DIR_NAME: &str = "install";
+#[cfg(target_os = "macos")]
+const INSTALL_DIR_NAME: &str = "install";
+
 pub fn run(args: InitArgs, _no_init: bool) {
     debug!(
         "Running the Initialization command with arguments: {:#?}",
@@ -93,17 +108,13 @@ fn windows(settings: &mut Settings) {
 
 fn set_build_dir(settings: &mut Settings) {
     // Create a build directory in the working directory, check if it exists first, then save the path to the settings file.
-    #[cfg(target_os = "windows")]
-    let build_dir_name = "Build";
-    #[cfg(target_os = "linux")]
-    let build_dir_name = "build";
 
-    let build_dir = Path::new(&settings.working_dir).join("build");
+    let build_dir = Path::new(&settings.working_dir).join(BUILD_DIR_NAME);
     settings.build_dir = build_dir.to_str().unwrap().to_string();
     // Create the build directory. If it already exists, it will just skip this step.
     std::fs::create_dir(&settings.build_dir).unwrap_or_else(|e| {
         if e.kind() == std::io::ErrorKind::AlreadyExists {
-            warn!("The '{}' directory already exists. Skipping this step.", build_dir_name);
+            warn!("The '{}' directory already exists. Skipping this step.", BUILD_DIR_NAME);
         } else {
             error!("Error creating the build directory: {}", e);
         }
@@ -112,18 +123,14 @@ fn set_build_dir(settings: &mut Settings) {
 
 fn set_install_dir(settings: &mut Settings) {
     // Create an install directory in the working directory, check if it exists first, then save the path to the settings file.
-    #[cfg(target_os = "windows")]
-    let install_dir_name = "Install";
-    #[cfg(target_os = "linux")]
-    let install_dir_name = "install";
 
-    let install_dir = Path::new(&settings.working_dir).join(install_dir_name);
+    let install_dir = Path::new(&settings.working_dir).join(INSTALL_DIR_NAME);
 
     settings.install_dir = install_dir.to_str().unwrap().to_string();
     // Create the install directory
     std::fs::create_dir(&settings.install_dir).unwrap_or_else(|e| {
         if e.kind() == std::io::ErrorKind::AlreadyExists {
-            warn!("The '{}' directory already exists. Skipping this step.", install_dir_name);
+            warn!("The '{}' directory already exists. Skipping this step.", INSTALL_DIR_NAME);
         } else {
             error!("Error creating the install directory: {}", e);
         }
