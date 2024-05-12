@@ -233,7 +233,7 @@ pub fn execute_and_return_output(cmd_array: Vec<String>) -> String {
             let output = Command::new(command).args(args).output();
 
             match output {
-                Ok(output) => process_output(output), // Process the output normally
+                Ok(output) => process_output(output),
                 Err(e) => {
                     error!("Failed to execute command: {}", e);
                     format!("Command execution failed: {}", e)
@@ -261,6 +261,19 @@ pub fn execute_and_return_output(cmd_array: Vec<String>) -> String {
             // }
 
         }
+        "macos" => {
+            let (command, args) = cmd_array.split_first().unwrap();
+
+            let output = Command::new(command).args(args).output();
+
+            match output {
+                Ok(output) => process_output(output),
+                Err(e) => {
+                    error!("Failed to execute command: {}", e);
+                    format!("Command execution failed: {}", e)
+                }
+            }
+        }
         _ => {
             RuntimeErrors::NotSupportedOS(None).exit();
             String::new()
@@ -273,10 +286,7 @@ fn check_supported_os(settings: &Settings) -> String {
 
     match env.as_str() {
         "linux" => env.to_string(),
-        "macos" => {
-            RuntimeErrors::NotSupportedOS(Some(env.to_string())).exit();
-            String::new()
-        }
+        "macos" => env.to_string(),
         "windows" => env.to_string(),
         _ => {
             RuntimeErrors::NotSupportedOS(Some(env.to_string())).exit();
