@@ -425,11 +425,36 @@ fn create_symlinks(src_dir: &Path, target_dir: &Path) -> std::io::Result<()> {
             }
 
             // Create the symlink
-            match std::os::windows::fs::symlink_file(path, &target_path) {
-                Ok(_) => info!("Symlink created for {:?}", path),
-                Err(e) => error!("Failed to create symlink for {:?}: {}", path, e),
-            }
+            create_platform_specific_symlink(path, &target_path)?;
         }
     }
     Ok(())
+}
+
+#[cfg(target_os = "windows")]
+fn create_platform_specific_symlink(path: &Path, target_path: &Path) -> std::io::Result<()> {
+    match std::os::windows::fs::symlink_file(path, target_path) {
+        Ok(_) => {
+            info!("Symlink created for {:?}", path);
+            Ok(())
+        },
+        Err(e) => {
+            error!("Failed to create symlink for {:?}: {}", path, e);
+            Err(e)
+        },
+    }
+}
+
+#[cfg(target_os = "linux")]
+fn create_platform_specific_symlink(path: &Path, target_path: &Path) -> std::io::Result<()> {
+    match std::os::unix::fs::symlink(path, target_path) {
+        Ok(_) => {
+            info!("Symlink created for {:?}", path);
+            Ok(())
+        },
+        Err(e) => {
+            error!("Failed to create symlink for {:?}: {}", path, e);
+            Err(e)
+        },
+    }
 }
