@@ -235,8 +235,9 @@ fn cache_cmake_targets(settings: &mut Settings) {
                                     });
                             }
                             // UNIX/Clang or UNIX/GCC
-                            else if settings.cmake_system_type == "unix/clang"
-                                || settings.cmake_system_type == "unix/gcc"
+                            else
+                            // else if settings.cmake_system_type == "unix/clang"
+                            //     || settings.cmake_system_type == "unix/gcc"
                             {
                                 // Ignore the build type and just grab all targets as in unix codemodel is different
                                 response
