@@ -361,6 +361,32 @@ fn generate_preset(
                 "-DCMAKE_CXX_COMPILER=g++".to_string(),
             ]
         }
+        "make/clang" => {
+            vec![
+                "cmake".to_string(),
+                "-S".to_string(),
+                source_dir.to_string(),
+                "-B".to_string(),
+                build_dir.to_string(),
+                "-G".to_string(),
+                "Unix Makefiles".to_string(),
+                "-DCMAKE_C_COMPILER=clang".to_string(),
+                "-DCMAKE_CXX_COMPILER=clang++".to_string(),
+            ]
+        }
+        "make/gcc" => {
+            vec![
+                "cmake".to_string(),
+                "-S".to_string(),
+                source_dir.to_string(),
+                "-B".to_string(),
+                build_dir.to_string(),
+                "-G".to_string(),
+                "Unix Makefiles".to_string(),
+                "-DCMAKE_C_COMPILER=gcc".to_string(),
+                "-DCMAKE_CXX_COMPILER=g++".to_string(),
+            ]
+        }
         _ => {
             error!("Invalid system type: {}", system_type);
             RuntimeErrors::GenerateProjectInvalidSystemType(Some(system_type.to_string())).exit();
