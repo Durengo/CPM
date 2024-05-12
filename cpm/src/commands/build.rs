@@ -255,10 +255,10 @@ fn cache_cmake_targets(settings: &mut Settings) {
                             else if settings.cmake_system_type == "make/clang"
                                 || settings.cmake_system_type == "make/gcc"
                             {
-                                // Ignore the build type and just grab all targets as in unix codemodel is different
                                 response
                                     .configurations
                                     .iter()
+                                    .filter(|config| config.name == settings.cmake_build_type)
                                     .flat_map(|config| &config.targets)
                                     .for_each(|target| {
                                         info!(
