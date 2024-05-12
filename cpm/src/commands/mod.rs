@@ -87,6 +87,8 @@ pub struct BuildArgs {
     ///     nt/msvc     ---> Windows, MSVC compiler
     ///     unix/clang  ---> Unix, Clang compiler
     ///     unix/gcc    ---> Unix, GCC compiler
+    ///     make/clang  ---> Unix, Clang compiler, Make build system
+    ///     make/gcc    ---> Unix, GCC compiler, Make build system
     ///     NONE        ---> No system type. Uses last cached generate command.
     #[clap(
         required = false,

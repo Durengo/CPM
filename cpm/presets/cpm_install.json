@@ -21,23 +21,40 @@
         "linux": {
             "dependencies": [
                 "gcc",
-                "make"
+                "clang",
+                "make",
+                "cmake",
+                "git"
             ],
             "toolchain": "",
+            "libraries": [
+                {
+                    "library": "gtest",
+                    "distribution": "arch"
+                }
+            ],
             "instructions": [
-                "sudo apt-get install gcc",
-                "sudo apt-get install make"
+                ""
             ]
         },
         "macos": {
             "tools": [
+                "gcc",
+                "clang",
                 "brew",
-                "xcode"
+                "xcode",
+                "cmake",
+                "git"
             ],
             "toolchain": "",
+            "osx_packages": [
+                {
+                    "package": "repo",
+                    "tool": "brew"
+                }
+            ],
             "setup_steps": [
-                "install brew",
-                "install xcode"
+                ""
             ]
         }
     }

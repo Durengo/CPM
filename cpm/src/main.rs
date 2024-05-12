@@ -1,5 +1,4 @@
 use clap::{ CommandFactory, Parser };
-use internal::settings;
 use spdlog::prelude::*;
 
 use crate::errors::errors::RuntimeErrors;
@@ -79,8 +78,8 @@ fn check_supported_os(settings: &Settings) {
     let env = &settings.os;
 
     match env.as_str() {
-        "linux" => RuntimeErrors::NotSupportedOS(Some(env.to_string())).exit(),
-        "macos" => RuntimeErrors::NotSupportedOS(Some(env.to_string())).exit(),
+        "linux" => trace!("Running on Linux"),
+        "macos" => trace!("Running on MacOS"),
         "windows" => trace!("Running on Windows"),
         _ => RuntimeErrors::NotSupportedOS(Some(env.to_string())).exit(),
     }
@@ -89,9 +88,16 @@ fn check_supported_os(settings: &Settings) {
 fn check_cache(reinit: bool) -> std::io::Result<Settings> {
     if reinit {
         let settings_path = Settings::get_settings_path()?;
-        Settings::delete(&settings_path)?;
-        let settings = Settings::init(true)?;
-        Ok(settings)
+        // If it does not exist, then create it.
+        if settings_path.exists() {
+            Settings::delete(&settings_path)?;
+            let settings = Settings::init(true)?;
+            Ok(settings)
+        }
+        else {
+            let settings = Settings::init(false)?;
+            Ok(settings)
+        }
     } else {
         let settings = Settings::init(false)?;
         Ok(settings)

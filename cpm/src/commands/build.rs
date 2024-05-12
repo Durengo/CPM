@@ -1,20 +1,37 @@
 use spdlog::prelude::*;
+use std::fs;
 use std::path::Path;
 use walkdir::WalkDir;
-use std::fs;
 
 use crate::commands::BuildArgs;
 use crate::errors::errors::RuntimeErrors;
-use crate::internal::settings::Settings;
 use crate::internal::cmd;
 use crate::internal::codemodel_v2::{
-    CMakeAPIResponse,
-    generate_cmake_codemodel_v2,
-    find_codemodel_file,
+    find_codemodel_file, generate_cmake_codemodel_v2, CMakeAPIResponse,
 };
+use crate::internal::settings::Settings;
+// use crate::internal::codemodel_msvc::CMakeAPIResponse;
+
+#[cfg(target_os = "windows")]
+const BUILD_DIR_NAME: &str = "Build";
+#[cfg(target_os = "linux")]
+const BUILD_DIR_NAME: &str = "build";
+#[cfg(target_os = "macos")]
+const BUILD_DIR_NAME: &str = "build";
+
+
+#[cfg(target_os = "windows")]
+const INSTALL_DIR_NAME: &str = "Install";
+#[cfg(target_os = "linux")]
+const INSTALL_DIR_NAME: &str = "install";
+#[cfg(target_os = "macos")]
+const INSTALL_DIR_NAME: &str = "install";
 
 pub fn run(args: BuildArgs) {
-    debug!("Running the Initialization command with arguments: {:#?}", args);
+    debug!(
+        "Running the Initialization command with arguments: {:#?}",
+        args
+    );
 
     // Grab the settings file as it will be needed for the subcommands.
     let settings_path = match Settings::get_settings_path() {
@@ -49,7 +66,8 @@ pub fn run(args: BuildArgs) {
             }
             _ => {
                 warn!(
-                    "No arguments provided for cleaning. Cleaning both 'Build' and 'Install' folders."
+                    "No arguments provided for cleaning. Cleaning both '{0}' and '{1}' folders.",
+                    BUILD_DIR_NAME, INSTALL_DIR_NAME
                 );
                 clean_cmake_project(&settings, "bi");
             }
@@ -73,8 +91,7 @@ pub fn run(args: BuildArgs) {
             Some(generate_args) if !generate_args.trim().is_empty() => {
                 info!(
                     "Generating CMake project for system type '{}' with build type '{}'",
-                    generate_args,
-                    build_type
+                    generate_args, build_type
                 );
                 generate_cmake_project(&mut settings, generate_args, build_type);
             }
@@ -170,11 +187,17 @@ pub fn run(args: BuildArgs) {
 }
 
 fn cache_cmake_targets(settings: &mut Settings) {
-    info!("Caching CMake targets based on build type: {}", settings.cmake_build_type);
+    info!(
+        "Caching CMake targets based on build type: {}",
+        settings.cmake_build_type
+    );
 
     // Double check that the build has been generated
     // Simple check to see if the .cmake/api/v1/reply directory exists
-    if !Path::new(&settings.build_dir).join(".cmake/api/v1/reply").exists() {
+    if !Path::new(&settings.build_dir)
+        .join(".cmake/api/v1/reply")
+        .exists()
+    {
         error!("CMake project has not been generated. Run 'cpm build --generate-project' first.");
         RuntimeErrors::CMakeProjectNotGenerated.exit();
     }
@@ -191,19 +214,43 @@ fn cache_cmake_targets(settings: &mut Settings) {
                     let api_response: Result<CMakeAPIResponse, _> = serde_json::from_str(&contents);
                     match api_response {
                         Ok(response) => {
-                            // Filter configurations by the current build type
-                            response.configurations
-                                .iter()
-                                .filter(|config| config.name == settings.cmake_build_type)
-                                .flat_map(|config| &config.targets)
-                                .for_each(|target| {
-                                    // info!(
-                                    //     "Found target for {} build: {}",
-                                    //     settings.cmake_build_type,
-                                    //     target.name
-                                    // );
-                                    targets.push(target.name.clone());
-                                });
+                            // Log
+                            info!("Found CMake API response: {:#?}", response);
+                            // Depending on the compiler and build system we need to capture targets differently
+
+                            // NT/MSVC
+                            if settings.cmake_system_type == "nt/msvc" {
+                                // Filter configurations by the current build type
+                                response
+                                    .configurations
+                                    .iter()
+                                    .filter(|config| config.name == settings.cmake_build_type)
+                                    .flat_map(|config| &config.targets)
+                                    .for_each(|target| {
+                                        info!(
+                                            "Found target for {} build: {}",
+                                            settings.cmake_build_type, target.name
+                                        );
+                                        targets.push(target.name.clone());
+                                    });
+                            }
+                            // UNIX/Clang or UNIX/GCC
+                            else if settings.cmake_system_type == "unix/clang"
+                                || settings.cmake_system_type == "unix/gcc"
+                            {
+                                // Ignore the build type and just grab all targets as in unix codemodel is different
+                                response
+                                    .configurations
+                                    .iter()
+                                    .flat_map(|config| &config.targets)
+                                    .for_each(|target| {
+                                        info!(
+                                            "Found target for {} build: {}",
+                                            settings.cmake_build_type, target.name
+                                        );
+                                        targets.push(target.name.clone());
+                                    });
+                            }
                         }
                         Err(e) => error!("Failed to parse JSON: {}", e),
                     }
@@ -214,7 +261,10 @@ fn cache_cmake_targets(settings: &mut Settings) {
         Err(e) => error!("Error finding JSON file: {}", e),
     }
 
-    info!("Found targets for {} build: {:#?}", settings.cmake_build_type, targets);
+    info!(
+        "Found targets for {} build: {:#?}",
+        settings.cmake_build_type, targets
+    );
     settings.cmake_targets = targets;
     let _ = settings.save_default();
 }
@@ -236,6 +286,12 @@ fn generate_cmake_project(settings: &mut Settings, system_type: &str, build_type
     let source_dir = settings.working_dir.clone();
     let build_dir = settings.build_dir.clone();
     let toolchain_path = settings.vcpkg_path.clone();
+
+    // Throw error if building msvc for non-windows
+    if system_type == "nt/msvc" && !cfg!(target_os = "windows") {
+        error!("Cannot build for 'nt/msvc' on a non-Windows system.");
+        RuntimeErrors::GenerateProjectNtMsvcNonWindows.exit();
+    }
 
     // If system_type is "nt/msvc", then the toolchain path must be set.
     if system_type == "nt/msvc" && toolchain_path.is_empty() {
@@ -264,7 +320,7 @@ fn generate_preset(
     system_type: &str,
     source_dir: &str,
     build_dir: &str,
-    toolchain_path: &str
+    toolchain_path: &str,
 ) -> Vec<String> {
     match system_type {
         "nt/msvc" => {
@@ -276,7 +332,7 @@ fn generate_preset(
                 build_dir.to_string(),
                 "-G".to_string(),
                 "Visual Studio 17 2022".to_string(),
-                format!("-DCMAKE_TOOLCHAIN_FILE={}", toolchain_path)
+                format!("-DCMAKE_TOOLCHAIN_FILE={}", toolchain_path),
             ]
         }
         "unix/clang" => {
@@ -289,7 +345,7 @@ fn generate_preset(
                 "-G".to_string(),
                 "Ninja".to_string(),
                 "-DCMAKE_C_COMPILER=clang".to_string(),
-                "-DCMAKE_CXX_COMPILER=clang++".to_string()
+                "-DCMAKE_CXX_COMPILER=clang++".to_string(),
             ]
         }
         "unix/gcc" => {
@@ -302,7 +358,33 @@ fn generate_preset(
                 "-G".to_string(),
                 "Ninja".to_string(),
                 "-DCMAKE_C_COMPILER=gcc".to_string(),
-                "-DCMAKE_CXX_COMPILER=g++".to_string()
+                "-DCMAKE_CXX_COMPILER=g++".to_string(),
+            ]
+        }
+        "make/clang" => {
+            vec![
+                "cmake".to_string(),
+                "-S".to_string(),
+                source_dir.to_string(),
+                "-B".to_string(),
+                build_dir.to_string(),
+                "-G".to_string(),
+                "Unix Makefiles".to_string(),
+                "-DCMAKE_C_COMPILER=clang".to_string(),
+                "-DCMAKE_CXX_COMPILER=clang++".to_string(),
+            ]
+        }
+        "make/gcc" => {
+            vec![
+                "cmake".to_string(),
+                "-S".to_string(),
+                source_dir.to_string(),
+                "-B".to_string(),
+                build_dir.to_string(),
+                "-G".to_string(),
+                "Unix Makefiles".to_string(),
+                "-DCMAKE_C_COMPILER=gcc".to_string(),
+                "-DCMAKE_CXX_COMPILER=g++".to_string(),
             ]
         }
         _ => {
@@ -316,39 +398,35 @@ fn generate_preset(
 fn build_cmake_project(settings: &Settings, build_type: &str) {
     let build_dir = settings.build_dir.clone();
 
-    cmd::execute_and_display_output_live(
-        vec![
-            "cmake".to_string(),
-            "--build".to_string(),
-            build_dir.clone(),
-            "--config".to_string(),
-            build_type.to_string()
-        ]
-    );
+    cmd::execute_and_display_output_live(vec![
+        "cmake".to_string(),
+        "--build".to_string(),
+        build_dir.clone(),
+        "--config".to_string(),
+        build_type.to_string(),
+    ]);
 }
 
 fn install_cmake_project(settings: &Settings, build_type: &str) {
     let build_dir = settings.build_dir.clone();
 
-    cmd::execute_and_display_output_live(
-        vec![
-            "cmake".to_string(),
-            "--install".to_string(),
-            build_dir.clone(),
-            "--prefix".to_string(),
-            // Create a new path using settings.os_release and build_type
-            // i.e. <install_dir>/<os_release>/<build_type>
-            Path::new(&settings.install_dir)
-                .join(&settings.os_release)
-                .join(build_type)
-                .to_str()
-                .unwrap()
-                .to_string(),
-            "--config".to_string(),
-            build_type.to_string(),
-            "-v".to_string()
-        ]
-    );
+    cmd::execute_and_display_output_live(vec![
+        "cmake".to_string(),
+        "--install".to_string(),
+        build_dir.clone(),
+        "--prefix".to_string(),
+        // Create a new path using settings.os_release and build_type
+        // i.e. <install_dir>/<os_release>/<build_type>
+        Path::new(&settings.install_dir)
+            .join(&settings.os_release)
+            .join(build_type)
+            .to_str()
+            .unwrap()
+            .to_string(),
+        "--config".to_string(),
+        build_type.to_string(),
+        "-v".to_string(),
+    ]);
 }
 
 fn clean_cmake_project(settings: &Settings, what_to_clean: &str) {
@@ -373,13 +451,13 @@ fn clean_cmake_project(settings: &Settings, what_to_clean: &str) {
     if build_dir {
         match std::fs::remove_dir_all(&settings.build_dir) {
             Ok(_) => {
-                info!("Successfully removed the 'Build' directory.");
+                info!("Successfully removed the '{}' directory.", BUILD_DIR_NAME);
             }
             Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
                 warn!("The build directory does not exist. Skipping this step.");
             }
             Err(e) => {
-                error!("Error removing the 'Build' directory: {}", e);
+                error!("Error removing the '{}' directory: {}", BUILD_DIR_NAME, e);
             }
         }
     }
@@ -387,13 +465,13 @@ fn clean_cmake_project(settings: &Settings, what_to_clean: &str) {
     if install_dir {
         match std::fs::remove_dir_all(&settings.install_dir) {
             Ok(_) => {
-                info!("Successfully removed the 'Install' directory.");
+                info!("Successfully removed the '{}' directory.", INSTALL_DIR_NAME);
             }
             Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
                 warn!("The install directory does not exist. Skipping this step.");
             }
             Err(e) => {
-                error!("Error removing the 'Install' directory: {}", e);
+                error!("Error removing the '{}' directory: {}", INSTALL_DIR_NAME, e);
             }
         }
     }
@@ -425,11 +503,50 @@ fn create_symlinks(src_dir: &Path, target_dir: &Path) -> std::io::Result<()> {
             }
 
             // Create the symlink
-            match std::os::windows::fs::symlink_file(path, &target_path) {
-                Ok(_) => info!("Symlink created for {:?}", path),
-                Err(e) => error!("Failed to create symlink for {:?}: {}", path, e),
-            }
+            create_platform_specific_symlink(path, &target_path)?;
         }
     }
     Ok(())
+}
+
+#[cfg(target_os = "windows")]
+fn create_platform_specific_symlink(path: &Path, target_path: &Path) -> std::io::Result<()> {
+    match std::os::windows::fs::symlink_file(path, target_path) {
+        Ok(_) => {
+            info!("Symlink created for {:?}", path);
+            Ok(())
+        }
+        Err(e) => {
+            error!("Failed to create symlink for {:?}: {}", path, e);
+            Err(e)
+        }
+    }
+}
+
+#[cfg(target_os = "linux")]
+fn create_platform_specific_symlink(path: &Path, target_path: &Path) -> std::io::Result<()> {
+    match std::os::unix::fs::symlink(path, target_path) {
+        Ok(_) => {
+            info!("Symlink created for {:?}", path);
+            Ok(())
+        }
+        Err(e) => {
+            error!("Failed to create symlink for {:?}: {}", path, e);
+            Err(e)
+        }
+    }
+}
+
+#[cfg(target_os = "macos")]
+fn create_platform_specific_symlink(path: &Path, target_path: &Path) -> std::io::Result<()> {
+    match std::os::unix::fs::symlink(path, target_path) {
+        Ok(_) => {
+            info!("Symlink created for {:?}", path);
+            Ok(())
+        }
+        Err(e) => {
+            error!("Failed to create symlink for {:?}: {}", path, e);
+            Err(e)
+        }
+    }
 }

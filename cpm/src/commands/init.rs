@@ -5,11 +5,29 @@ use std::path::Path;
 
 use crate::commands::InitArgs;
 use crate::errors::errors::RuntimeErrors;
-use crate::internal::settings::Settings;
 use crate::internal::install::Presets;
+use crate::internal::settings::Settings;
+
+#[cfg(target_os = "windows")]
+const BUILD_DIR_NAME: &str = "Build";
+#[cfg(target_os = "linux")]
+const BUILD_DIR_NAME: &str = "build";
+#[cfg(target_os = "macos")]
+const BUILD_DIR_NAME: &str = "build";
+
+
+#[cfg(target_os = "windows")]
+const INSTALL_DIR_NAME: &str = "Install";
+#[cfg(target_os = "linux")]
+const INSTALL_DIR_NAME: &str = "install";
+#[cfg(target_os = "macos")]
+const INSTALL_DIR_NAME: &str = "install";
 
 pub fn run(args: InitArgs, _no_init: bool) {
-    debug!("Running the Initialization command with arguments: {:#?}", args);
+    debug!(
+        "Running the Initialization command with arguments: {:#?}",
+        args
+    );
     debug!("No init flag: {}", _no_init);
 
     if _no_init {
@@ -29,8 +47,9 @@ fn entry() -> std::io::Result<()> {
     if settings.working_dir == settings.exe_dir {
         RuntimeErrors::WorkingDirSameAsExePath(
             settings.working_dir.clone(),
-            settings.exe_dir.clone()
-        ).exit();
+            settings.exe_dir.clone(),
+        )
+        .exit();
     }
 
     settings.save(&Settings::get_settings_path()?)?;
@@ -51,12 +70,56 @@ fn os_specific(settings: &mut Settings) {
     let env = &settings.os;
 
     match env.as_str() {
-        "linux" => RuntimeErrors::NotSupportedOS(Some(env.to_string())).exit(),
-        "macos" => RuntimeErrors::NotSupportedOS(Some(env.to_string())).exit(),
+        "linux" => linux(settings),
+        "macos" => osx(settings),
         "windows" => windows(settings),
         _ => RuntimeErrors::NotSupportedOS(Some(env.to_string())).exit(),
     }
 }
+
+// OSX
+
+fn osx(settings: &mut Settings) {
+    get_and_load_preset_config(settings);
+    create_entrypoint();
+    set_build_dir(settings);
+    set_install_dir(settings);
+}
+
+#[cfg(target_os = "macos")]
+// 0o755 sets the owner to read, write, and execute, and others to read and execute
+fn chmod_file(file_path: &Path) {
+    use std::os::unix::fs::PermissionsExt;
+
+    let permissions = std::fs::Permissions::from_mode(0o755);
+    match std::fs::set_permissions(&file_path, permissions) {
+        Ok(_) => info!("Set executable permissions successfully."),
+        Err(e) => error!("Failed to set executable permissions: {}", e),
+    }
+}
+
+// LINUX
+
+fn linux(settings: &mut Settings) {
+    get_and_load_preset_config(settings);
+    create_entrypoint();
+    set_build_dir(settings);
+    set_install_dir(settings);
+}
+
+#[cfg(target_os = "linux")]
+// 0o755 sets the owner to read, write, and execute, and others to read and execute
+fn chmod_file(file_path: &Path) {
+    use std::os::unix::fs::PermissionsExt;
+
+    let permissions = std::fs::Permissions::from_mode(0o755);
+    match std::fs::set_permissions(&file_path, permissions) {
+        Ok(_) => info!("Set executable permissions successfully."),
+        Err(e) => error!("Failed to set executable permissions: {}", e),
+    }
+}
+
+// WINDOWS
 
 fn windows(settings: &mut Settings) {
     get_and_load_preset_config(settings);
@@ -67,12 +130,13 @@ fn windows(settings: &mut Settings) {
 
 fn set_build_dir(settings: &mut Settings) {
     // Create a build directory in the working directory, check if it exists first, then save the path to the settings file.
-    let build_dir = Path::new(&settings.working_dir).join("Build");
+
+    let build_dir = Path::new(&settings.working_dir).join(BUILD_DIR_NAME);
     settings.build_dir = build_dir.to_str().unwrap().to_string();
     // Create the build directory. If it already exists, it will just skip this step.
     std::fs::create_dir(&settings.build_dir).unwrap_or_else(|e| {
         if e.kind() == std::io::ErrorKind::AlreadyExists {
-            warn!("The 'Build' directory already exists. Skipping this step.");
+            warn!("The '{}' directory already exists. Skipping this step.", BUILD_DIR_NAME);
         } else {
             error!("Error creating the build directory: {}", e);
         }
@@ -81,12 +145,14 @@ fn set_build_dir(settings: &mut Settings) {
 
 fn set_install_dir(settings: &mut Settings) {
     // Create an install directory in the working directory, check if it exists first, then save the path to the settings file.
-    let install_dir = Path::new(&settings.working_dir).join("Install");
+
+    let install_dir = Path::new(&settings.working_dir).join(INSTALL_DIR_NAME);
+
     settings.install_dir = install_dir.to_str().unwrap().to_string();
     // Create the install directory
     std::fs::create_dir(&settings.install_dir).unwrap_or_else(|e| {
         if e.kind() == std::io::ErrorKind::AlreadyExists {
-            warn!("The 'Install' directory already exists. Skipping this step.");
+            warn!("The '{}' directory already exists. Skipping this step.", INSTALL_DIR_NAME);
         } else {
             error!("Error creating the install directory: {}", e);
         }
@@ -109,28 +175,59 @@ fn create_entrypoint() {
     let env = settings.os;
 
     match env.as_str() {
-        "linux" => RuntimeErrors::NotSupportedOS(Some(env.to_string())).exit(),
-        "macos" => RuntimeErrors::NotSupportedOS(Some(env.to_string())).exit(),
+        "linux" => {
+            let entrypoint_path = Path::new(&settings.working_dir).join("cpm.sh");
+            let entrypoint_content = format!("#!/bin/bash\n{} --no-init $@", settings.exe_path);
+            match File::create(entrypoint_path.clone()) {
+                Ok(mut file) => match file.write_all(entrypoint_content.as_bytes()) {
+                    Ok(_) => info!(
+                        "Successfully wrote the entrypoint file to disk: {:?}",
+                        entrypoint_path.clone().to_str().unwrap()
+                    ),
+                    Err(e) => error!("Error writing the entrypoint file to disk: {}", e),
+                },
+                Err(e) => error!("Error creating the entrypoint file: {}", e),
+            }
+            // Make the file executable
+            #[cfg(target_os = "linux")]
+            chmod_file(&entrypoint_path);
+        }
+        "macos" => {
+            let entrypoint_path = Path::new(&settings.working_dir).join("cpm.sh");
+            let entrypoint_content = format!("#!/bin/bash\n{} --no-init $@", settings.exe_path);
+            match File::create(entrypoint_path.clone()) {
+                Ok(mut file) => match file.write_all(entrypoint_content.as_bytes()) {
+                    Ok(_) => info!(
+                        "Successfully wrote the entrypoint file to disk: {:?}",
+                        entrypoint_path.clone().to_str().unwrap()
+                    ),
+                    Err(e) => error!("Error writing the entrypoint file to disk: {}", e),
+                },
+                Err(e) => error!("Error creating the entrypoint file: {}", e),
+            }
+            // Make the file executable
+            #[cfg(target_os = "macos")]
+            chmod_file(&entrypoint_path);
+        },
         "windows" => {
             let entrypoint_path = Path::new(&settings.working_dir).join("cpm.bat");
             let entrypoint_content = format!("@echo off\n{} --no-init %*", settings.exe_path);
             match File::create(entrypoint_path.clone()) {
-                Ok(mut file) => {
-                    match file.write_all(entrypoint_content.as_bytes()) {
-                        Ok(_) =>
-                            info!(
-                                "Successfully wrote the entrypoint file to disk: {:?}",
-                                entrypoint_path.clone().to_str().unwrap()
-                            ),
-                        Err(e) => error!("Error writing the entrypoint file to disk: {}", e),
-                    }
-                }
+                Ok(mut file) => match file.write_all(entrypoint_content.as_bytes()) {
+                    Ok(_) => info!(
+                        "Successfully wrote the entrypoint file to disk: {:?}",
+                        entrypoint_path.clone().to_str().unwrap()
+                    ),
+                    Err(e) => error!("Error writing the entrypoint file to disk: {}", e),
+                },
                 Err(e) => error!("Error creating the entrypoint file: {}", e),
             }
         }
         _ => RuntimeErrors::NotSupportedOS(Some(env.to_string())).exit(),
     }
 }
+
+// GENERAL
 
 fn get_and_load_preset_config(settings: &mut Settings) {
     // If preset already exists skip this step
@@ -161,7 +258,7 @@ fn get_and_load_preset_config(settings: &mut Settings) {
 
 fn write_embedded_file_to_disk(
     embedded_file_name: &str,
-    output_file_path: &Path
+    output_file_path: &Path,
 ) -> std::io::Result<()> {
     if let Some(embedded_file) = Presets::get(embedded_file_name) {
         info!("Writing embedded file to disk: {:?}", output_file_path);
@@ -169,6 +266,9 @@ fn write_embedded_file_to_disk(
         output_file.write_all(&embedded_file.data)?;
         Ok(())
     } else {
-        Err(std::io::Error::new(std::io::ErrorKind::NotFound, "Embedded file not found"))
+        Err(std::io::Error::new(
+            std::io::ErrorKind::NotFound,
+            "Embedded file not found",
+        ))
     }
 }
