@@ -45,6 +45,7 @@ pub fn run(args: SetupArgs) {
         }
     };
 
+    #[allow(unused_assignments)]
     let mut selected_os = String::new();
 
     // If platform flag is set, only run the command for the specified platform, otherwise run the current platform
@@ -56,7 +57,9 @@ pub fn run(args: SetupArgs) {
             "linux" => {
                 selected_os = platform.to_string();
             }
-            "macos" => RuntimeErrors::NotSupportedOS(Some(platform.to_string())).exit(),
+            "macos" => {
+                selected_os = platform.to_string();
+            }
             _ => {
                 RuntimeErrors::NotSupportedOS(Some(platform.to_string())).exit();
                 return;
@@ -70,7 +73,9 @@ pub fn run(args: SetupArgs) {
             "linux" => {
                 selected_os = settings.os.to_string();
             }
-            "macos" => RuntimeErrors::NotSupportedOS(Some(settings.os.to_string())).exit(),
+            "macos" => {
+                selected_os = settings.os.to_string();
+            },
             _ => {
                 RuntimeErrors::NotSupportedOS(Some(settings.os.to_string())).exit();
                 return;
@@ -203,7 +208,7 @@ fn auto_toolchain_path(settings: &mut Settings, config: &Config, os: &str) {
             linux_install(settings, config);
         }
         _ => {
-            RuntimeErrors::NotSupportedOS(Some(settings.os.to_string())).exit();
+            osx_install(settings, config);
         }
     }
 }
@@ -276,8 +281,124 @@ fn toolchain_usage(settings: &mut Settings, config: &Config) {
             settings.using_toolchain = false;
             let _ = settings.save_default();
         }
+        "macos" => {
+            // No supported toolchains for MacOS yet.
+            warn!("No supported toolchains for MacOS yet.");
+            settings.using_toolchain = false;
+            let _ = settings.save_default();
+        }
         _ => {
             RuntimeErrors::NotSupportedOS(Some(settings.os.to_string())).exit();
+        }
+    }
+}
+
+// OSX
+
+fn osx_install(settings: &Settings, config: &Config) {
+    let osx_config = match &config.config.macos {
+        Some(macos) => macos,
+        None => {
+            error!("No MacOS configuration found in the install config");
+            return;
+        }
+    };
+
+    debug!("MacOS Config:\n{:#?}", osx_config);
+
+    osx_check_tools(settings, config);
+    osx_check_packages(settings, config);
+    osx_check_setup_steps(settings, config);
+}
+
+fn osx_check_tools(settings: &Settings, config: &Config) {
+    info!("Checking tools");
+
+    // Retrieve tools from the Config
+    if let Some(macos_config) = &config.config.macos {
+        let tools = &macos_config.tools;
+
+        // If there are no tools, return early
+        if tools.is_empty() {
+            trace!("No tools found");
+            return;
+        }
+
+        platform_match_packages(settings, config, tools);
+    }
+}
+
+fn osx_check_packages(_settings: &Settings, config: &Config) {
+    info!("Checking packages to install");
+
+    // Retrieve packages from the Config
+    if let Some(macos_config) = &config.config.macos {
+        let packages = &macos_config.osx_packages;
+
+        // If there are no packages, return early
+        if packages.is_empty() {
+            trace!("No packages found");
+            return;
+        }
+
+        for package in packages {
+            // If tool is not brew, throw error
+            if package.tool.to_lowercase() != "brew" {
+                RuntimeErrors::UnsupportedToolMacOS(Some(package.tool.clone())).exit();
+            }
+
+            // Check if the package is already installed
+            let package_installed = cmd::execute_and_return_output(vec![
+                "brew".to_string(),
+                "info".to_string(),
+                package.package.to_string(),
+            ]);
+
+            let is_installed = !package_installed.contains("Not installed");
+
+            // TODO: Really need better error handling for running commands.
+            if !is_installed {
+                info!("Installing package: {}", package.package);
+                let install_output = cmd::execute_and_return_output(vec![
+                "brew".to_string(),
+                "install".to_string(),
+                package.package.to_string()
+                ]);
+
+                if install_output.is_empty() {
+                    RuntimeErrors::PackageInstallFailed(Some(package.package.clone())).exit();
+                } else {
+                    info!("Installed package: {}", package.package);
+                }
+
+            } else {
+                info!("Package already installed: {}", package.package);
+            }
+        }
+    }
+}
+
+fn osx_check_setup_steps(_settings: &Settings, config: &Config) {
+    info!("Checking setup steps");
+
+    // Retrieve setup steps from the Config
+    if let Some(macos_config) = &config.config.macos {
+        let setup_steps = &macos_config.setup_steps;
+
+        // If there are no setup steps, return early
+        if setup_steps.is_empty() {
+            trace!("No setup steps found");
+            return;
+        }
+
+        for setup_step in setup_steps {
+            // Check against premade mappings
+            match setup_step.as_str() {
+                _ => {
+                    // No exit here as it's not a critical error.
+                    RuntimeErrors::PostInstallNoDefinition(Some(setup_step.to_string()));
+                }
+            }
         }
     }
 }
@@ -706,4 +827,171 @@ fn windows_post_install(settings: &Settings, config: &Config) {
             }
         }
     }
+}
+
+// GENERAL
+
+fn platform_match_packages(settings: &Settings, _config: &Config, package_list: &Vec<String>) {
+    // Specific check location command
+    #[cfg(target_os = "windows")]
+    let command = "where";
+    #[cfg(any(target_os = "linux", target_os = "macos"))]
+    let command = "whereis";
+
+    for package in package_list {
+        info!("Checking for: {}", package);
+        // Check against premade mappings
+        match package.as_str() {
+            "cmake" => {
+                let cmake_version = cmd::execute_and_return_output(vec![
+                    "cmake".to_string(),
+                    "--version".to_string(),
+                ]);
+                if cmake_version.is_empty() {
+                    error!("CMake not found. Please install CMake and try again.");
+                    RuntimeErrors::PrerequisiteNotFound(Some("cmake".to_string())).exit();
+                } else {
+                    // Might produce this in the output: 'CMake suite maintained and supported by Kitware (kitware.com/cmake).' remove this.
+                    let cmake_version = cmake_version.lines().next().unwrap_or_default();
+                    info!("CMake found: {}", cmake_version);
+                }
+            }
+            "git" => {
+                let git_version = cmd::execute_and_return_output(vec![
+                    "git".to_string(),
+                    "--version".to_string(),
+                ]);
+                if git_version.is_empty() {
+                    error!("Git not found. Please install Git and try again.");
+                    RuntimeErrors::PrerequisiteNotFound(Some("git".to_string())).exit();
+                } else {
+                    info!("Git found: {}", git_version);
+                }
+            }
+            "vcpkg" => {
+                // Throw warning if Linux or MacOS, use settings
+                if settings.os == "linux" || settings.os == "macos" {
+                    warn!("VCPKG is not supported on Linux or MacOS");
+                    return;
+                }
+
+                let vcpkg_version = cmd::execute_and_return_output(vec![
+                    "vcpkg".to_string(),
+                    "--version".to_string(),
+                ]);
+                if vcpkg_version.is_empty() {
+                    error!("VCPKG not found. Please install VCPKG and try again.");
+                    RuntimeErrors::PrerequisiteNotFound(Some("vcpkg".to_string())).exit();
+                } else {
+                    // Might produce this in the output: 'See LICENSE.txt for license information.' remove this.
+                    let vcpkg_version = vcpkg_version.lines().next().unwrap_or_default();
+                    info!("VCPKG found: {}", vcpkg_version);
+                }
+            }
+            "rustc" => {
+                let rustc_version = cmd::execute_and_return_output(vec![
+                    "rustc".to_string(),
+                    "--version".to_string(),
+                ]);
+                if rustc_version.is_empty() {
+                    error!("Rust not found. Please install Rust and try again.");
+                    RuntimeErrors::PrerequisiteNotFound(Some("rustc".to_string())).exit();
+                } else {
+                    info!("Rust found: {}", rustc_version);
+                }
+            }
+            "cargo" => {
+                let cargo_version = cmd::execute_and_return_output(vec![
+                    "cargo".to_string(),
+                    "--version".to_string(),
+                ]);
+                if cargo_version.is_empty() {
+                    error!("Cargo not found. Please install Cargo and try again.");
+                    RuntimeErrors::PrerequisiteNotFound(Some("cargo".to_string())).exit();
+                } else {
+                    info!("Cargo found: {}", cargo_version);
+                }
+            }
+            "gcc" => {
+                let gcc_version = cmd::execute_and_return_output(vec![
+                    "gcc".to_string(),
+                    "--version".to_string(),
+                ]);
+                if gcc_version.is_empty() {
+                    error!("GCC not found. Please install GCC and try again.");
+                    RuntimeErrors::PrerequisiteNotFound(Some("gcc".to_string())).exit();
+                } else {
+                    info!("GCC found: {}", gcc_version);
+                }
+            }
+            "clang" => {
+                let clang_version = cmd::execute_and_return_output(vec![
+                    "clang".to_string(),
+                    "--version".to_string(),
+                ]);
+                if clang_version.is_empty() {
+                    error!("Clang not found. Please install Clang and try again.");
+                    RuntimeErrors::PrerequisiteNotFound(Some("clang".to_string())).exit();
+                } else {
+                    info!("Clang found: {}", clang_version);
+                }
+            }
+            "brew" => {
+                // Throw warning if Linux or Windows, use settings
+                if settings.os == "linux" || settings.os == "windows" {
+                    warn!("Homebrew is not supported on Linux or Windows");
+                    return;
+                }
+
+                let brew_version = cmd::execute_and_return_output(vec![
+                    "brew".to_string(),
+                    "--version".to_string(),
+                ]);
+                if brew_version.is_empty() {
+                    error!("Homebrew not found. Please install Homebrew and try again.");
+                    RuntimeErrors::PrerequisiteNotFound(Some("brew".to_string())).exit();
+                } else {
+                    info!("Homebrew found: {}", brew_version);
+                }
+            }
+            "xcode" => {
+                // Throw warning if Linux or MacOS, use settings
+                if settings.os == "linux" || settings.os == "windows" {
+                    warn!("Xcode is not supported on Linux or Windows");
+                    return;
+                }
+
+                let xcode_version = cmd::execute_and_return_output(vec![
+                    "xcodebuild".to_string(),
+                    "-version".to_string(),
+                ]);
+                if xcode_version.is_empty() {
+                    error!("Xcode not found. Please install Xcode and try again.");
+                    RuntimeErrors::PrerequisiteNotFound(Some("xcode".to_string())).exit();
+                } else {
+                    info!("Xcode found: {}", xcode_version);
+                }
+            }
+            // Since the prerequisite is not in the mappings, just check if the executable exists
+            _ => {
+
+
+                let package_path = cmd::execute_and_return_output(vec![
+                    command.to_string(),
+                    package.to_string(),
+                ]);
+                if package_path.is_empty() {
+                    RuntimeErrors::PrerequisiteNotFound(Some(package.to_string())).exit();
+                }
+                // Need to handle the output of whereis if it's 'x_dep:' - i.e error
+                else if package_path.ends_with(":") {
+                    RuntimeErrors::PrerequisiteNotFound(Some(package.to_string())).exit();
+                } else {
+                    info!("{} found: {}", package, package_path);
+                }
+            }
+        }
+    
+    }
+
 }
