@@ -36,6 +36,7 @@ pub struct LinuxConfig {
 pub struct MacOSConfig {
     pub tools: Vec<String>,
     pub toolchain: String,
+    pub osx_packages: Vec<OsxPackage>,
     pub setup_steps: Vec<String>,
 }
 
@@ -49,4 +50,10 @@ pub struct Package {
 pub struct Library {
     pub library: String,
     pub distribution: String,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct OsxPackage {
+    pub package: String,
+    pub tool: String,
 }

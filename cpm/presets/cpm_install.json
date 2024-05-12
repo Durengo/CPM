@@ -21,6 +21,7 @@
         "linux": {
             "dependencies": [
                 "gcc",
+                "clang",
                 "make",
                 "cmake",
                 "git"
@@ -38,13 +39,22 @@
         },
         "macos": {
             "tools": [
+                "gcc",
+                "clang",
                 "brew",
-                "xcode"
+                "xcode",
+                "cmake",
+                "git"
             ],
             "toolchain": "",
+            "osx_packages": [
+                {
+                    "package": "repo",
+                    "tool": "brew"
+                }
+            ],
             "setup_steps": [
-                "brew",
-                "xcode"
+                ""
             ]
         }
     }
