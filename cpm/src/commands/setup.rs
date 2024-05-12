@@ -550,12 +550,12 @@ fn windows_install(settings: &Settings, config: &Config) {
 
     debug!("Windows Config:\n{:#?}", windows_config);
 
-    windows_check_prerequisites(config);
+    windows_check_prerequisites(settings, config);
     windows_install_libraries(settings, config);
     windows_post_install(settings, config);
 }
 
-fn windows_check_prerequisites(config: &Config) {
+fn windows_check_prerequisites(settings: &Settings, config: &Config) {
     // If needed have special mappings for specific prerequisites.
     // Example: To check cmake, we can use 'cmake --version' and check the output.
     // But the output has some additional text which we don't need.
@@ -572,90 +572,7 @@ fn windows_check_prerequisites(config: &Config) {
             return;
         }
 
-        // Iterate over each prerequisite
-        for prereq in prereqs {
-            // Check against premade mappings
-            match prereq.as_str() {
-                // Check if cmake is installed
-                "cmake" => {
-                    let cmake_version = cmd::execute_and_return_output(vec![
-                        "cmake".to_string(),
-                        "--version".to_string(),
-                    ]);
-                    if cmake_version.is_empty() {
-                        error!("CMake not found. Please install CMake and try again.");
-                        RuntimeErrors::PrerequisiteNotFound(Some("cmake".to_string())).exit();
-                    } else {
-                        // Might produce this in the output: 'CMake suite maintained and supported by Kitware (kitware.com/cmake).' remove this.
-                        let cmake_version = cmake_version.lines().next().unwrap_or_default();
-                        info!("CMake found: {}", cmake_version);
-                    }
-                }
-                // Check if git is installed
-                "git" => {
-                    let git_version = cmd::execute_and_return_output(vec![
-                        "git".to_string(),
-                        "--version".to_string(),
-                    ]);
-                    if git_version.is_empty() {
-                        error!("Git not found. Please install Git and try again.");
-                        RuntimeErrors::PrerequisiteNotFound(Some("git".to_string())).exit();
-                    } else {
-                        info!("Git found: {}", git_version);
-                    }
-                }
-                "vcpkg" => {
-                    let vcpkg_version = cmd::execute_and_return_output(vec![
-                        "vcpkg".to_string(),
-                        "--version".to_string(),
-                    ]);
-                    if vcpkg_version.is_empty() {
-                        error!("VCPKG not found. Please install VCPKG and try again.");
-                        RuntimeErrors::PrerequisiteNotFound(Some("vcpkg".to_string())).exit();
-                    } else {
-                        // Might produce this in the output: 'See LICENSE.txt for license information.' remove this.
-                        let vcpkg_version = vcpkg_version.lines().next().unwrap_or_default();
-                        info!("VCPKG found: {}", vcpkg_version);
-                    }
-                }
-                "rustc" => {
-                    let rustc_version = cmd::execute_and_return_output(vec![
-                        "rustc".to_string(),
-                        "--version".to_string(),
-                    ]);
-                    if rustc_version.is_empty() {
-                        error!("Rust not found. Please install Rust and try again.");
-                        RuntimeErrors::PrerequisiteNotFound(Some("rustc".to_string())).exit();
-                    } else {
-                        info!("Rust found: {}", rustc_version);
-                    }
-                }
-                "cargo" => {
-                    let cargo_version = cmd::execute_and_return_output(vec![
-                        "cargo".to_string(),
-                        "--version".to_string(),
-                    ]);
-                    if cargo_version.is_empty() {
-                        error!("Cargo not found. Please install Cargo and try again.");
-                        RuntimeErrors::PrerequisiteNotFound(Some("cargo".to_string())).exit();
-                    } else {
-                        info!("Cargo found: {}", cargo_version);
-                    }
-                }
-                // Since the prerequisite is not in the mappings, just check if the executable exists
-                _ => {
-                    let prereq_path = cmd::execute_and_return_output(vec![
-                        "where".to_string(),
-                        prereq.to_string(),
-                    ]);
-                    if prereq_path.is_empty() {
-                        RuntimeErrors::PrerequisiteNotFound(Some(prereq.to_string())).exit();
-                    } else {
-                        info!("{} found: {}", prereq, prereq_path);
-                    }
-                }
-            }
-        }
+        platform_match_packages(settings, config, prereqs);
     }
 }
 
