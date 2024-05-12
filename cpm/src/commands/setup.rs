@@ -75,7 +75,7 @@ pub fn run(args: SetupArgs) {
             }
             "macos" => {
                 selected_os = settings.os.to_string();
-            },
+            }
             _ => {
                 RuntimeErrors::NotSupportedOS(Some(settings.os.to_string())).exit();
                 return;
@@ -360,9 +360,9 @@ fn osx_check_packages(_settings: &Settings, config: &Config) {
             if !is_installed {
                 info!("Installing package: {}", package.package);
                 let install_output = cmd::execute_and_return_output(vec![
-                "brew".to_string(),
-                "install".to_string(),
-                package.package.to_string()
+                    "brew".to_string(),
+                    "install".to_string(),
+                    package.package.to_string(),
                 ]);
 
                 if install_output.is_empty() {
@@ -370,7 +370,6 @@ fn osx_check_packages(_settings: &Settings, config: &Config) {
                 } else {
                     info!("Installed package: {}", package.package);
                 }
-
             } else {
                 info!("Package already installed: {}", package.package);
             }
@@ -416,12 +415,12 @@ fn linux_install(settings: &Settings, config: &Config) {
 
     debug!("Linux Config:\n{:#?}", linux_config);
 
-    linux_check_dependencies(config);
+    linux_check_dependencies(settings, config);
     linux_check_libraries(settings, config);
     linux_check_instructions(settings, config);
 }
 
-fn linux_check_dependencies(config: &Config) {
+fn linux_check_dependencies(settings: &Settings, config: &Config) {
     // If needed have special mappings for specific prerequisites.
     // Example: To check cmake, we can use 'cmake --version' and check the output.
     // But the output has some additional text which we don't need.
@@ -437,80 +436,7 @@ fn linux_check_dependencies(config: &Config) {
             return;
         }
 
-        // Iterate over each dependency
-        for dep in deps {
-            // Check against premade mappings
-            match dep.as_str() {
-                // Check if cmake is installed
-                "cmake" => {
-                    let cmake_version = cmd::execute_and_return_output(vec![
-                        "cmake".to_string(),
-                        "--version".to_string(),
-                    ]);
-                    if cmake_version.is_empty() {
-                        error!("CMake not found. Please install CMake and try again.");
-                        RuntimeErrors::PrerequisiteNotFound(Some("cmake".to_string())).exit();
-                    } else {
-                        // Might produce this in the output: 'CMake suite maintained and supported by Kitware (kitware.com/cmake).' remove this.
-                        let cmake_version = cmake_version.lines().next().unwrap_or_default();
-                        info!("CMake found: {}", cmake_version);
-                    }
-                }
-                // Check if git is installed
-                "git" => {
-                    let git_version = cmd::execute_and_return_output(vec![
-                        "git".to_string(),
-                        "--version".to_string(),
-                    ]);
-                    if git_version.is_empty() {
-                        error!("Git not found. Please install Git and try again.");
-                        RuntimeErrors::PrerequisiteNotFound(Some("git".to_string())).exit();
-                    } else {
-                        info!("Git found: {}", git_version);
-                    }
-                }
-                "rustc" => {
-                    let rustc_version = cmd::execute_and_return_output(vec![
-                        "rustc".to_string(),
-                        "--version".to_string(),
-                    ]);
-                    if rustc_version.is_empty() {
-                        error!("Rust not found. Please install Rust and try again.");
-                        RuntimeErrors::PrerequisiteNotFound(Some("rustc".to_string())).exit();
-                    } else {
-                        info!("Rust found: {}", rustc_version);
-                    }
-                }
-                "cargo" => {
-                    let cargo_version = cmd::execute_and_return_output(vec![
-                        "cargo".to_string(),
-                        "--version".to_string(),
-                    ]);
-                    if cargo_version.is_empty() {
-                        error!("Cargo not found. Please install Cargo and try again.");
-                        RuntimeErrors::PrerequisiteNotFound(Some("cargo".to_string())).exit();
-                    } else {
-                        info!("Cargo found: {}", cargo_version);
-                    }
-                }
-                // Since the prerequisite is not in the mappings, just check if the executable exists
-                _ => {
-                    let dep_path = cmd::execute_and_return_output(vec![
-                        "whereis".to_string(),
-                        dep.to_string(),
-                    ]);
-                    if dep_path.is_empty() {
-                        RuntimeErrors::PrerequisiteNotFound(Some(dep.to_string())).exit();
-                    }
-                    // Need to handle the output of whereis if it's 'x_dep:' - i.e error
-                    else if dep_path.ends_with(":") {
-                        RuntimeErrors::PrerequisiteNotFound(Some(dep.to_string())).exit();
-                    } else {
-                        info!("{} found: {}", dep, dep_path);
-                    }
-                }
-            }
-        }
+        platform_match_packages(settings, config, deps);
     }
 }
 
@@ -974,12 +900,8 @@ fn platform_match_packages(settings: &Settings, _config: &Config, package_list: 
             }
             // Since the prerequisite is not in the mappings, just check if the executable exists
             _ => {
-
-
-                let package_path = cmd::execute_and_return_output(vec![
-                    command.to_string(),
-                    package.to_string(),
-                ]);
+                let package_path =
+                    cmd::execute_and_return_output(vec![command.to_string(), package.to_string()]);
                 if package_path.is_empty() {
                     RuntimeErrors::PrerequisiteNotFound(Some(package.to_string())).exit();
                 }
@@ -991,7 +913,5 @@ fn platform_match_packages(settings: &Settings, _config: &Config, package_list: 
                 }
             }
         }
-    
     }
-
 }
