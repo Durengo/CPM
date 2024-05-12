@@ -78,7 +78,7 @@ fn check_supported_os(settings: &Settings) {
     let env = &settings.os;
 
     match env.as_str() {
-        "linux" => RuntimeErrors::NotSupportedOS(Some(env.to_string())).exit(),
+        "linux" => trace!("Running on Linux"),
         "macos" => RuntimeErrors::NotSupportedOS(Some(env.to_string())).exit(),
         "windows" => trace!("Running on Windows"),
         _ => RuntimeErrors::NotSupportedOS(Some(env.to_string())).exit(),
