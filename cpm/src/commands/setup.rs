@@ -5,12 +5,15 @@ use std::path::Path;
 
 use crate::commands::SetupArgs;
 use crate::errors::errors::RuntimeErrors;
-use crate::internal::settings::Settings;
 use crate::internal::cmd;
 use crate::internal::install::Config;
+use crate::internal::settings::Settings;
 
 pub fn run(args: SetupArgs) {
-    debug!("Running the Initialization command with arguments: {:#?}", args);
+    debug!(
+        "Running the Initialization command with arguments: {:#?}",
+        args
+    );
 
     // Grab the settings file as it will be needed for the subcommands.
     let settings_path = match Settings::get_settings_path() {
@@ -52,7 +55,7 @@ pub fn run(args: SetupArgs) {
             }
             "linux" => {
                 selected_os = platform.to_string();
-            },
+            }
             "macos" => RuntimeErrors::NotSupportedOS(Some(platform.to_string())).exit(),
             _ => {
                 RuntimeErrors::NotSupportedOS(Some(platform.to_string())).exit();
@@ -66,7 +69,7 @@ pub fn run(args: SetupArgs) {
             }
             "linux" => {
                 selected_os = settings.os.to_string();
-            },
+            }
             "macos" => RuntimeErrors::NotSupportedOS(Some(settings.os.to_string())).exit(),
             _ => {
                 RuntimeErrors::NotSupportedOS(Some(settings.os.to_string())).exit();
@@ -110,11 +113,11 @@ fn retrieve_install(file_path: &Path) -> Result<Config, Box<dyn std::error::Erro
 
     // Read the contents into a string
     let mut config_data = String::new();
-    file.read_to_string(&mut config_data).map_err(|e| format!("Failed to read file data: {}", e))?;
+    file.read_to_string(&mut config_data)
+        .map_err(|e| format!("Failed to read file data: {}", e))?;
 
     // Deserialize the JSON string into Config struct
-    let config: Config = serde_json
-        ::from_str(&config_data)
+    let config: Config = serde_json::from_str(&config_data)
         .map_err(|e| format!("Failed to parse JSON data: {}", e))?;
 
     // Return the deserialized config
@@ -147,7 +150,10 @@ fn check_toolchain(settings: &mut Settings, toolchain_path: String) {
                     settings.vcpkg_path = vcpkg_cmake_path;
                     let _ = settings.save_default();
                 } else {
-                    error!("VCPKG CMake toolchain file not found at: {}", vcpkg_cmake_path);
+                    error!(
+                        "VCPKG CMake toolchain file not found at: {}",
+                        vcpkg_cmake_path
+                    );
                     RuntimeErrors::ToolchainNotFound("VCPKG".to_string()).exit();
                 }
             }
@@ -193,6 +199,9 @@ fn auto_toolchain_path(settings: &mut Settings, config: &Config, os: &str) {
         "windows" => {
             windows_install(settings, config);
         }
+        "linux" => {
+            linux_install(settings, config);
+        }
         _ => {
             RuntimeErrors::NotSupportedOS(Some(settings.os.to_string())).exit();
         }
@@ -219,17 +228,30 @@ fn toolchain_usage(settings: &mut Settings, config: &Config) {
                 info!("Using Windows toolchain: {}", toolchain);
 
                 // Returns a trimmed string (without \r\n line endings)
-                let toolchain_path = cmd::execute_and_return_output(
-                    vec!["where".to_string(), toolchain.to_string()]
-                );
+                let toolchain_path = cmd::execute_and_return_output(vec![
+                    "where".to_string(),
+                    toolchain.to_string(),
+                ]);
                 if !toolchain_path.is_empty() {
-                    debug!("{} path found: {}", toolchain.to_uppercase(), toolchain_path);
+                    debug!(
+                        "{} path found: {}",
+                        toolchain.to_uppercase(),
+                        toolchain_path
+                    );
                     // Normalize the path to use consistent path separators
                     let normalized_path = normalize_path_separator(&toolchain_path);
                     // Remove '\\vcpkg.exe' from the path
                     let normalized_path = normalized_path.trim_end_matches("\\vcpkg.exe");
-                    debug!("Normalized {} path: {}", toolchain.to_uppercase(), normalized_path);
-                    info!("Toolchain {} found: {}", toolchain.to_uppercase(), normalized_path);
+                    debug!(
+                        "Normalized {} path: {}",
+                        toolchain.to_uppercase(),
+                        normalized_path
+                    );
+                    info!(
+                        "Toolchain {} found: {}",
+                        toolchain.to_uppercase(),
+                        normalized_path
+                    );
 
                     settings.toolchain_path = normalized_path.to_string();
                     settings.using_toolchain = true;
@@ -248,11 +270,226 @@ fn toolchain_usage(settings: &mut Settings, config: &Config) {
                 RuntimeErrors::ConfigParseError(Some("Windows".to_string())).exit();
             }
         }
+        "linux" => {
+            // No supported toolchains for Linux yet.
+            warn!("No supported toolchains for Linux yet.");
+            settings.using_toolchain = false;
+            let _ = settings.save_default();
+        }
         _ => {
             RuntimeErrors::NotSupportedOS(Some(settings.os.to_string())).exit();
         }
     }
 }
+
+// LINUX
+
+fn linux_install(settings: &Settings, config: &Config) {
+    let linux_config = match &config.config.linux {
+        Some(linux) => linux,
+        None => {
+            error!("No Linux configuration found in the install config");
+            return;
+        }
+    };
+
+    debug!("Linux Config:\n{:#?}", linux_config);
+
+    linux_check_dependencies(config);
+    linux_check_libraries(settings, config);
+    linux_check_instructions(settings, config);
+}
+
+fn linux_check_dependencies(config: &Config) {
+    // If needed have special mappings for specific prerequisites.
+    // Example: To check cmake, we can use 'cmake --version' and check the output.
+    // But the output has some additional text which we don't need.
+    info!("Checking prerequisites");
+
+    // Retrieve prerequisites from the Config
+    if let Some(linux_config) = &config.config.linux {
+        let deps = &linux_config.dependencies;
+
+        // If there are no dependencies, return early
+        if deps.is_empty() {
+            trace!("No dependencies found");
+            return;
+        }
+
+        // Iterate over each dependency
+        for dep in deps {
+            // Check against premade mappings
+            match dep.as_str() {
+                // Check if cmake is installed
+                "cmake" => {
+                    let cmake_version = cmd::execute_and_return_output(vec![
+                        "cmake".to_string(),
+                        "--version".to_string(),
+                    ]);
+                    if cmake_version.is_empty() {
+                        error!("CMake not found. Please install CMake and try again.");
+                        RuntimeErrors::PrerequisiteNotFound(Some("cmake".to_string())).exit();
+                    } else {
+                        // Might produce this in the output: 'CMake suite maintained and supported by Kitware (kitware.com/cmake).' remove this.
+                        let cmake_version = cmake_version.lines().next().unwrap_or_default();
+                        info!("CMake found: {}", cmake_version);
+                    }
+                }
+                // Check if git is installed
+                "git" => {
+                    let git_version = cmd::execute_and_return_output(vec![
+                        "git".to_string(),
+                        "--version".to_string(),
+                    ]);
+                    if git_version.is_empty() {
+                        error!("Git not found. Please install Git and try again.");
+                        RuntimeErrors::PrerequisiteNotFound(Some("git".to_string())).exit();
+                    } else {
+                        info!("Git found: {}", git_version);
+                    }
+                }
+                "rustc" => {
+                    let rustc_version = cmd::execute_and_return_output(vec![
+                        "rustc".to_string(),
+                        "--version".to_string(),
+                    ]);
+                    if rustc_version.is_empty() {
+                        error!("Rust not found. Please install Rust and try again.");
+                        RuntimeErrors::PrerequisiteNotFound(Some("rustc".to_string())).exit();
+                    } else {
+                        info!("Rust found: {}", rustc_version);
+                    }
+                }
+                "cargo" => {
+                    let cargo_version = cmd::execute_and_return_output(vec![
+                        "cargo".to_string(),
+                        "--version".to_string(),
+                    ]);
+                    if cargo_version.is_empty() {
+                        error!("Cargo not found. Please install Cargo and try again.");
+                        RuntimeErrors::PrerequisiteNotFound(Some("cargo".to_string())).exit();
+                    } else {
+                        info!("Cargo found: {}", cargo_version);
+                    }
+                }
+                // Since the prerequisite is not in the mappings, just check if the executable exists
+                _ => {
+                    let dep_path = cmd::execute_and_return_output(vec![
+                        "whereis".to_string(),
+                        dep.to_string(),
+                    ]);
+                    if dep_path.is_empty() {
+                        RuntimeErrors::PrerequisiteNotFound(Some(dep.to_string())).exit();
+                    }
+                    // Need to handle the output of whereis if it's 'x_dep:' - i.e error
+                    else if dep_path.ends_with(":") {
+                        RuntimeErrors::PrerequisiteNotFound(Some(dep.to_string())).exit();
+                    } else {
+                        info!("{} found: {}", dep, dep_path);
+                    }
+                }
+            }
+        }
+    }
+}
+
+fn linux_check_libraries(settings: &Settings, config: &Config) {
+    info!("Checking packages to install");
+
+    // Retrieve packages from the Config
+    if let Some(linux_config) = &config.config.linux {
+        let libraries = &linux_config.libraries;
+
+        // If there are no packages, return early
+        if libraries.is_empty() {
+            trace!("No libraries found");
+            return;
+        }
+
+        for library in libraries {
+            if !linux_is_library_installed(library) {
+                linux_install_package(library);
+            } else {
+                info!("Package already installed: {:#}", library.library);
+            }
+        }
+    }
+}
+
+fn linux_is_library_installed(library: &crate::internal::install::Library) -> bool {
+    let check_command = match library.distribution.as_str() {
+        "arch" => format!("pacman -Q {}", library.library),
+        "ubuntu" => format!("dpkg -l {}", library.library),
+        _ => {
+            RuntimeErrors::UnsupportedLinuxDistribution(Some(library.distribution.clone())).exit();
+            return false;
+        }
+    };
+
+    // TODO: At the moment on Arch executing pacman will always throw an error
+    let output = cmd::execute_and_return_output(vec![(check_command).to_string()]);
+
+    if output.is_empty() {
+        false
+    } else {
+        output.contains(&library.library)
+    }
+}
+
+fn linux_install_package(library: &crate::internal::install::Library) {
+    let check_command = match library.distribution.as_str() {
+        "arch" => format!("sudo pacman -S {}", library.library),
+        "ubuntu" => format!("dpkg -l {}", library.library),
+        _ => {
+            RuntimeErrors::UnsupportedLinuxDistribution(Some(library.distribution.clone())).exit();
+            return;
+        }
+    };
+
+    // For now just throw error that the package should be installed manually.
+    warn!(
+        "Make sure to install the package manually: {}",
+        library.library
+    );
+
+    // // TODO: At the moment on Arch executing pacman will always throw an error
+    // let output = cmd::execute_and_return_output(vec![
+    //     (check_command).to_string(),
+    // ]);
+
+    // if output.is_empty() {
+    //     warn!("Failed to install package: {}", library.library);
+    // } else {
+    //     info!("Installed package: {}", library.library);
+    // }
+}
+
+fn linux_check_instructions(settings: &Settings, config: &Config) {
+    info!("Checking post install instructions");
+
+    // Retrieve instructions from the Config
+    if let Some(linux_config) = &config.config.linux {
+        let instructions = &linux_config.instructions;
+
+        // If there are no instructions, return early
+        if instructions.is_empty() {
+            trace!("No instructions found");
+            return;
+        }
+
+        for instruction in instructions {
+            // Check against premade mappings
+            match instruction.as_str() {
+                _ => {
+                    // No exit here as it's not a critical error.
+                    RuntimeErrors::PostInstallNoDefinition(Some(instruction.to_string()));
+                }
+            }
+        }
+    }
+}
+
+// WINDOWS
 
 fn windows_install(settings: &Settings, config: &Config) {
     // Retrieve the WindowsConfig from the Config
@@ -294,9 +531,10 @@ fn windows_check_prerequisites(config: &Config) {
             match prereq.as_str() {
                 // Check if cmake is installed
                 "cmake" => {
-                    let cmake_version = cmd::execute_and_return_output(
-                        vec!["cmake".to_string(), "--version".to_string()]
-                    );
+                    let cmake_version = cmd::execute_and_return_output(vec![
+                        "cmake".to_string(),
+                        "--version".to_string(),
+                    ]);
                     if cmake_version.is_empty() {
                         error!("CMake not found. Please install CMake and try again.");
                         RuntimeErrors::PrerequisiteNotFound(Some("cmake".to_string())).exit();
@@ -308,9 +546,10 @@ fn windows_check_prerequisites(config: &Config) {
                 }
                 // Check if git is installed
                 "git" => {
-                    let git_version = cmd::execute_and_return_output(
-                        vec!["git".to_string(), "--version".to_string()]
-                    );
+                    let git_version = cmd::execute_and_return_output(vec![
+                        "git".to_string(),
+                        "--version".to_string(),
+                    ]);
                     if git_version.is_empty() {
                         error!("Git not found. Please install Git and try again.");
                         RuntimeErrors::PrerequisiteNotFound(Some("git".to_string())).exit();
@@ -319,9 +558,10 @@ fn windows_check_prerequisites(config: &Config) {
                     }
                 }
                 "vcpkg" => {
-                    let vcpkg_version = cmd::execute_and_return_output(
-                        vec!["vcpkg".to_string(), "--version".to_string()]
-                    );
+                    let vcpkg_version = cmd::execute_and_return_output(vec![
+                        "vcpkg".to_string(),
+                        "--version".to_string(),
+                    ]);
                     if vcpkg_version.is_empty() {
                         error!("VCPKG not found. Please install VCPKG and try again.");
                         RuntimeErrors::PrerequisiteNotFound(Some("vcpkg".to_string())).exit();
@@ -332,9 +572,10 @@ fn windows_check_prerequisites(config: &Config) {
                     }
                 }
                 "rustc" => {
-                    let rustc_version = cmd::execute_and_return_output(
-                        vec!["rustc".to_string(), "--version".to_string()]
-                    );
+                    let rustc_version = cmd::execute_and_return_output(vec![
+                        "rustc".to_string(),
+                        "--version".to_string(),
+                    ]);
                     if rustc_version.is_empty() {
                         error!("Rust not found. Please install Rust and try again.");
                         RuntimeErrors::PrerequisiteNotFound(Some("rustc".to_string())).exit();
@@ -343,9 +584,10 @@ fn windows_check_prerequisites(config: &Config) {
                     }
                 }
                 "cargo" => {
-                    let cargo_version = cmd::execute_and_return_output(
-                        vec!["cargo".to_string(), "--version".to_string()]
-                    );
+                    let cargo_version = cmd::execute_and_return_output(vec![
+                        "cargo".to_string(),
+                        "--version".to_string(),
+                    ]);
                     if cargo_version.is_empty() {
                         error!("Cargo not found. Please install Cargo and try again.");
                         RuntimeErrors::PrerequisiteNotFound(Some("cargo".to_string())).exit();
@@ -355,9 +597,10 @@ fn windows_check_prerequisites(config: &Config) {
                 }
                 // Since the prerequisite is not in the mappings, just check if the executable exists
                 _ => {
-                    let prereq_path = cmd::execute_and_return_output(
-                        vec!["where".to_string(), prereq.to_string()]
-                    );
+                    let prereq_path = cmd::execute_and_return_output(vec![
+                        "where".to_string(),
+                        prereq.to_string(),
+                    ]);
                     if prereq_path.is_empty() {
                         RuntimeErrors::PrerequisiteNotFound(Some(prereq.to_string())).exit();
                     } else {
@@ -392,22 +635,20 @@ fn windows_install_libraries(settings: &Settings, config: &Config) {
         // Iterate over each package
         for package in packages {
             // Check if the package is already installed
-            let package_installed = cmd
-                ::execute_and_return_output(vec![vcpkg_exe.to_string(), "list".to_string()])
-                .contains(&package.library);
+            let package_installed =
+                cmd::execute_and_return_output(vec![vcpkg_exe.to_string(), "list".to_string()])
+                    .contains(&package.library);
 
             if !package_installed {
                 // Set triplet
                 let triplet = format!("--triplet={}", package.triplet);
                 // Install the package
-                let output = cmd::execute_and_return_output(
-                    vec![
-                        vcpkg_exe.to_string(),
-                        "install".to_string(),
-                        package.library.to_string(),
-                        triplet
-                    ]
-                );
+                let output = cmd::execute_and_return_output(vec![
+                    vcpkg_exe.to_string(),
+                    "install".to_string(),
+                    package.library.to_string(),
+                    triplet,
+                ]);
                 if output.is_empty() {
                     RuntimeErrors::PackageInstallFailed(Some(package.library.clone())).exit();
                 } else {
@@ -444,13 +685,16 @@ fn windows_post_install(settings: &Settings, config: &Config) {
                     // Combine with "/vcpkg.exe"
                     let vcpkg_exe = format!("{}\\vcpkg.exe", settings.toolchain_path);
 
-                    let output = cmd::execute_and_return_output(
-                        vec![vcpkg_exe.to_string(), "integrate".to_string(), "install".to_string()]
-                    );
+                    let output = cmd::execute_and_return_output(vec![
+                        vcpkg_exe.to_string(),
+                        "integrate".to_string(),
+                        "install".to_string(),
+                    ]);
                     if output.is_empty() {
-                        RuntimeErrors::PostInstallFailed(
-                            Some("vcpkg_integrate_install".to_string())
-                        ).exit();
+                        RuntimeErrors::PostInstallFailed(Some(
+                            "vcpkg_integrate_install".to_string(),
+                        ))
+                        .exit();
                     } else {
                         info!("Post install: {}", "vcpkg_integrate_install");
                     }
