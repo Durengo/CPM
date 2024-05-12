@@ -106,6 +106,46 @@ pub fn execute_and_display_output_live(cmd_array: Vec<String>) {
                 .join()
                 .expect("The stderr thread has panicked");
         }
+        "macos" => {
+            let (command, args) = cmd_array.split_first().unwrap();
+            let mut child = Command::new(command)
+                .args(args)
+                .stdout(Stdio::piped())
+                .stderr(Stdio::piped())
+                .spawn()
+                .expect("Failed to start command");
+
+            let stdout = child.stdout.take().expect("Failed to take stdout of child");
+            let stderr = child.stderr.take().expect("Failed to take stderr of child");
+
+            let stdout_reader = BufReader::new(stdout);
+            let stderr_reader = BufReader::new(stderr);
+
+            let stdout_handle = thread::spawn(move || {
+                for line in stdout_reader.lines() {
+                    match line {
+                        Ok(line) => println!("{}", line),
+                        Err(e) => error!("Error reading stdout: {}", e),
+                    }
+                }
+            });
+
+            let stderr_handle = thread::spawn(move || {
+                for line in stderr_reader.lines() {
+                    match line {
+                        Ok(line) => println!("{}", line),
+                        Err(e) => error!("Error reading stderr: {}", e),
+                    }
+                }
+            });
+
+            stdout_handle
+                .join()
+                .expect("The stdout thread has panicked");
+            stderr_handle
+                .join()
+                .expect("The stderr thread has panicked");
+        }
         _ => {
             RuntimeErrors::NotSupportedOS(None).exit();
         }
