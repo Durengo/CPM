@@ -25,8 +25,7 @@
             ],
             "toolchain": "",
             "instructions": [
-                "sudo apt-get install gcc",
-                "sudo apt-get install make"
+                ""
             ]
         },
         "macos": {
@@ -36,8 +35,8 @@
             ],
             "toolchain": "",
             "setup_steps": [
-                "install brew",
-                "install xcode"
+                "brew",
+                "xcode"
             ]
         }
     }
