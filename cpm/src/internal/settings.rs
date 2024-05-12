@@ -36,7 +36,12 @@ pub struct Settings {
 impl Settings {
     pub fn new() -> io::Result<Self> {
         // Get the full executable path
+        // Windows/Linux works fine
+        #[cfg(any(target_os = "windows", target_os = "linux"))]
         let exe_path_buf = std::env::current_exe()?;
+        // MacOS needs to be handled differently
+        #[cfg(target_os = "macos")]
+        let exe_path_buf = std::env::current_exe()?.canonicalize()?;
         let exe_path = exe_path_buf
             .to_str()
             .map(|s| s.to_string())
