@@ -93,7 +93,7 @@ pub fn run(args: SetupArgs) {
         return;
     }
     // Use provided path and try to run setup.
-    if let Some(toolchain_path) = &args.use_toolchain_path {
+    if let Some(_toolchain_path) = &args.use_toolchain_path {
         return;
     }
 }

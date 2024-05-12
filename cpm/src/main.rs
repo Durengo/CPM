@@ -1,5 +1,4 @@
 use clap::{ CommandFactory, Parser };
-use internal::settings;
 use spdlog::prelude::*;
 
 use crate::errors::errors::RuntimeErrors;

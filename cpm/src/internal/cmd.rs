@@ -1,5 +1,5 @@
 use std::process::{ Command, Stdio };
-use std::io::{ self, BufReader, BufRead };
+use std::io::{ BufReader, BufRead };
 use std::thread;
 use spdlog::prelude::*;
 
@@ -58,6 +58,7 @@ pub fn execute_and_display_output_live(cmd_array: Vec<String>) {
     stderr_handle.join().expect("The stderr thread has panicked");
 }
 
+#[allow(dead_code)]
 pub fn execute_and_display_output(cmd_array: Vec<String>) {
     if cmd_array.is_empty() {
         RuntimeErrors::NoCommandsProvided.exit();
