@@ -50,7 +50,9 @@ pub fn run(args: SetupArgs) {
             "windows" => {
                 selected_os = platform.to_string();
             }
-            "linux" => RuntimeErrors::NotSupportedOS(Some(platform.to_string())).exit(),
+            "linux" => {
+                selected_os = platform.to_string();
+            },
             "macos" => RuntimeErrors::NotSupportedOS(Some(platform.to_string())).exit(),
             _ => {
                 RuntimeErrors::NotSupportedOS(Some(platform.to_string())).exit();
@@ -62,7 +64,9 @@ pub fn run(args: SetupArgs) {
             "windows" => {
                 selected_os = settings.os.to_string();
             }
-            "linux" => RuntimeErrors::NotSupportedOS(Some(settings.os.to_string())).exit(),
+            "linux" => {
+                selected_os = settings.os.to_string();
+            },
             "macos" => RuntimeErrors::NotSupportedOS(Some(settings.os.to_string())).exit(),
             _ => {
                 RuntimeErrors::NotSupportedOS(Some(settings.os.to_string())).exit();
@@ -78,8 +82,10 @@ pub fn run(args: SetupArgs) {
         // If the provided path has any '/' or '\' characters at the very end, remove them
         let toolchain_path = toolchain_path.trim_end_matches(|c| (c == '/' || c == '\\'));
         debug!("Path after trim: {}", toolchain_path);
+        check_toolchain(&mut settings, toolchain_path.to_string());
+        // Set the toolchain path only if it's defined
         settings.toolchain_path = toolchain_path.to_string();
-        check_toolchain(&mut settings);
+        let _ = settings.save_default();
         return;
     }
     // Auto detect toolchain and run setup.
@@ -115,13 +121,13 @@ fn retrieve_install(file_path: &Path) -> Result<Config, Box<dyn std::error::Erro
     Ok(config)
 }
 
-fn check_toolchain(settings: &mut Settings) {
+fn check_toolchain(settings: &mut Settings, toolchain_path: String) {
     // Run through a match of know toolchains and find their appropriate .cmake file.
     // Current list of know toolchains:
     // - VCPKG
-    if !settings.toolchain_path.is_empty() {
+    if !toolchain_path.is_empty() {
         // Normalize the path to use consistent path separators
-        let normalized_path = normalize_path_separator(&settings.toolchain_path);
+        let normalized_path = normalize_path_separator(&toolchain_path);
 
         let toolchain_path = Path::new(&normalized_path);
         let toolchain_root = toolchain_path
@@ -229,7 +235,7 @@ fn toolchain_usage(settings: &mut Settings, config: &Config) {
                     settings.using_toolchain = true;
                     let _ = settings.save_default();
                     // Now we have the path to the toolchain but still need to find the .cmake file. We already have a function for this.
-                    check_toolchain(settings);
+                    check_toolchain(settings, settings.toolchain_path.clone());
                 } else {
                     error!("No toolchain found. Turning off toolchain usage.");
                     settings.using_toolchain = false;
