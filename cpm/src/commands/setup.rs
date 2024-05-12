@@ -393,7 +393,7 @@ fn linux_check_dependencies(config: &Config) {
     }
 }
 
-fn linux_check_libraries(settings: &Settings, config: &Config) {
+fn linux_check_libraries(_settings: &Settings, config: &Config) {
     info!("Checking packages to install");
 
     // Retrieve packages from the Config
@@ -437,7 +437,7 @@ fn linux_is_library_installed(library: &crate::internal::install::Library) -> bo
 }
 
 fn linux_install_package(library: &crate::internal::install::Library) {
-    let check_command = match library.distribution.as_str() {
+    let _check_command = match library.distribution.as_str() {
         "arch" => format!("sudo pacman -S {}", library.library),
         "ubuntu" => format!("dpkg -l {}", library.library),
         _ => {
@@ -464,7 +464,7 @@ fn linux_install_package(library: &crate::internal::install::Library) {
     // }
 }
 
-fn linux_check_instructions(settings: &Settings, config: &Config) {
+fn linux_check_instructions(_settings: &Settings, config: &Config) {
     info!("Checking post install instructions");
 
     // Retrieve instructions from the Config
