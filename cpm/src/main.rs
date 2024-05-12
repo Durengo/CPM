@@ -88,9 +88,16 @@ fn check_supported_os(settings: &Settings) {
 fn check_cache(reinit: bool) -> std::io::Result<Settings> {
     if reinit {
         let settings_path = Settings::get_settings_path()?;
-        Settings::delete(&settings_path)?;
-        let settings = Settings::init(true)?;
-        Ok(settings)
+        // If it does not exist, then create it.
+        if settings_path.exists() {
+            Settings::delete(&settings_path)?;
+            let settings = Settings::init(true)?;
+            Ok(settings)
+        }
+        else {
+            let settings = Settings::init(false)?;
+            Ok(settings)
+        }
     } else {
         let settings = Settings::init(false)?;
         Ok(settings)
