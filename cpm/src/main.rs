@@ -79,7 +79,7 @@ fn check_supported_os(settings: &Settings) {
 
     match env.as_str() {
         "linux" => trace!("Running on Linux"),
-        "macos" => RuntimeErrors::NotSupportedOS(Some(env.to_string())).exit(),
+        "macos" => trace!("Running on MacOS"),
         "windows" => trace!("Running on Windows"),
         _ => RuntimeErrors::NotSupportedOS(Some(env.to_string())).exit(),
     }

@@ -19,6 +19,7 @@ pub enum RuntimeErrors {
     PackageInstallFailed(Option<String>),
     PostInstallFailed(Option<String>),
     PostInstallNoDefinition(Option<String>),
+    UnsupportedToolMacOS(Option<String>),
     // Build Command related errors 41-50
     GenerateProjectInvalidSystemType(Option<String>),
     GenerateProjectNtMsvcNoToolchain,
@@ -53,6 +54,7 @@ impl RuntimeErrors {
             RuntimeErrors::PackageInstallFailed(_) => 32,
             RuntimeErrors::PostInstallFailed(_) => 33,
             RuntimeErrors::PostInstallNoDefinition(_) => 34,
+            RuntimeErrors::UnsupportedToolMacOS(_) => 35,
             // Build Command related errors 31-40
             RuntimeErrors::GenerateProjectInvalidSystemType(_) => 41,
             RuntimeErrors::GenerateProjectNtMsvcNoToolchain => 42,
@@ -199,6 +201,16 @@ impl RuntimeErrors {
                     "|Error {}| Post install has no definition",
                     self.error_code()
                 )
+            }
+            RuntimeErrors::UnsupportedToolMacOS(Some(tool)) => {
+                format!(
+                    "|Error {}| The tool '{}' is not supported on MacOS",
+                    self.error_code(),
+                    tool
+                )
+            }
+            RuntimeErrors::UnsupportedToolMacOS(None) => {
+                format!("|Error {}| The tool is not supported on MacOS", self.error_code())
             }
             // Build Command related errors 31-40
             RuntimeErrors::GenerateProjectInvalidSystemType(Some(system_type)) => {

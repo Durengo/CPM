@@ -71,9 +71,30 @@ fn os_specific(settings: &mut Settings) {
 
     match env.as_str() {
         "linux" => linux(settings),
-        "macos" => RuntimeErrors::NotSupportedOS(Some(env.to_string())).exit(),
+        "macos" => osx(settings),
         "windows" => windows(settings),
         _ => RuntimeErrors::NotSupportedOS(Some(env.to_string())).exit(),
+    }
+}
+
+// OSX
+
+fn osx(settings: &mut Settings) {
+    get_and_load_preset_config(settings);
+    create_entrypoint();
+    set_build_dir(settings);
+    set_install_dir(settings);
+}
+
+#[cfg(target_os = "macos")]
+// 0o755 sets the owner to read, write, and execute, and others to read and execute
+fn chmod_file(file_path: &Path) {
+    use std::os::unix::fs::PermissionsExt;
+
+    let permissions = std::fs::Permissions::from_mode(0o755);
+    match std::fs::set_permissions(&file_path, permissions) {
+        Ok(_) => info!("Set executable permissions successfully."),
+        Err(e) => error!("Failed to set executable permissions: {}", e),
     }
 }
 
@@ -87,10 +108,11 @@ fn linux(settings: &mut Settings) {
 }
 
 #[cfg(target_os = "linux")]
+// 0o755 sets the owner to read, write, and execute, and others to read and execute
 fn chmod_file(file_path: &Path) {
     use std::os::unix::fs::PermissionsExt;
 
-    let permissions = std::fs::Permissions::from_mode(0o755); // 0o755 sets the owner to read, write, and execute, and others to read and execute
+    let permissions = std::fs::Permissions::from_mode(0o755);
     match std::fs::set_permissions(&file_path, permissions) {
         Ok(_) => info!("Set executable permissions successfully."),
         Err(e) => error!("Failed to set executable permissions: {}", e),
@@ -170,7 +192,23 @@ fn create_entrypoint() {
             #[cfg(target_os = "linux")]
             chmod_file(&entrypoint_path);
         }
-        "macos" => RuntimeErrors::NotSupportedOS(Some(env.to_string())).exit(),
+        "macos" => {
+            let entrypoint_path = Path::new(&settings.working_dir).join("cpm.sh");
+            let entrypoint_content = format!("#!/bin/bash\n{} --no-init $@", settings.exe_path);
+            match File::create(entrypoint_path.clone()) {
+                Ok(mut file) => match file.write_all(entrypoint_content.as_bytes()) {
+                    Ok(_) => info!(
+                        "Successfully wrote the entrypoint file to disk: {:?}",
+                        entrypoint_path.clone().to_str().unwrap()
+                    ),
+                    Err(e) => error!("Error writing the entrypoint file to disk: {}", e),
+                },
+                Err(e) => error!("Error creating the entrypoint file: {}", e),
+            }
+            // Make the file executable
+            #[cfg(target_os = "macos")]
+            chmod_file(&entrypoint_path);
+        },
         "windows" => {
             let entrypoint_path = Path::new(&settings.working_dir).join("cpm.bat");
             let entrypoint_content = format!("@echo off\n{} --no-init %*", settings.exe_path);
