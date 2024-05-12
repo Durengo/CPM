@@ -13,6 +13,16 @@ use crate::internal::codemodel_v2::{
     find_codemodel_file,
 };
 
+#[cfg(target_os = "windows")]
+const BUILD_DIR_NAME: &str = "Build";
+#[cfg(target_os = "linux")]
+const BUILD_DIR_NAME: &str = "build";
+
+#[cfg(target_os = "windows")]
+const INSTALL_DIR_NAME: &str = "Install";
+#[cfg(target_os = "linux")]
+const INSTALL_DIR_NAME: &str = "install";
+
 pub fn run(args: BuildArgs) {
     debug!("Running the Initialization command with arguments: {:#?}", args);
 
@@ -49,7 +59,7 @@ pub fn run(args: BuildArgs) {
             }
             _ => {
                 warn!(
-                    "No arguments provided for cleaning. Cleaning both 'Build' and 'Install' folders."
+                    "No arguments provided for cleaning. Cleaning both '{0}' and '{1}' folders.", BUILD_DIR_NAME, INSTALL_DIR_NAME
                 );
                 clean_cmake_project(&settings, "bi");
             }
@@ -373,13 +383,13 @@ fn clean_cmake_project(settings: &Settings, what_to_clean: &str) {
     if build_dir {
         match std::fs::remove_dir_all(&settings.build_dir) {
             Ok(_) => {
-                info!("Successfully removed the 'Build' directory.");
+                info!("Successfully removed the '{}' directory.", BUILD_DIR_NAME);
             }
             Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
                 warn!("The build directory does not exist. Skipping this step.");
             }
             Err(e) => {
-                error!("Error removing the 'Build' directory: {}", e);
+                error!("Error removing the '{}' directory: {}", BUILD_DIR_NAME, e);
             }
         }
     }
@@ -387,13 +397,13 @@ fn clean_cmake_project(settings: &Settings, what_to_clean: &str) {
     if install_dir {
         match std::fs::remove_dir_all(&settings.install_dir) {
             Ok(_) => {
-                info!("Successfully removed the 'Install' directory.");
+                info!("Successfully removed the '{}' directory.", INSTALL_DIR_NAME);
             }
             Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
                 warn!("The install directory does not exist. Skipping this step.");
             }
             Err(e) => {
-                error!("Error removing the 'Install' directory: {}", e);
+                error!("Error removing the '{}' directory: {}", INSTALL_DIR_NAME, e);
             }
         }
     }
