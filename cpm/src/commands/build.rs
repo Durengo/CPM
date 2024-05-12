@@ -235,9 +235,25 @@ fn cache_cmake_targets(settings: &mut Settings) {
                                     });
                             }
                             // UNIX/Clang or UNIX/GCC
-                            else
-                            // else if settings.cmake_system_type == "unix/clang"
-                            //     || settings.cmake_system_type == "unix/gcc"
+                            else if settings.cmake_system_type == "unix/clang"
+                                || settings.cmake_system_type == "unix/gcc"
+                            {
+                                // Ignore the build type and just grab all targets as in unix codemodel is different
+                                response
+                                    .configurations
+                                    .iter()
+                                    .flat_map(|config| &config.targets)
+                                    .for_each(|target| {
+                                        info!(
+                                            "Found target for {} build: {}",
+                                            settings.cmake_build_type, target.name
+                                        );
+                                        targets.push(target.name.clone());
+                                    });
+                            }
+                            // OSX/Clang
+                            else if settings.cmake_system_type == "make/clang"
+                                || settings.cmake_system_type == "make/gcc"
                             {
                                 // Ignore the build type and just grab all targets as in unix codemodel is different
                                 response
