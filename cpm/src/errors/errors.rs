@@ -28,6 +28,7 @@ pub enum RuntimeErrors {
     InvalidCleanCommand(char),
     ProjectNotInitialized,
     CMakeProjectNotGenerated,
+    GenerateProjectNtMsvcNonWindows,
     // Not implemented 1000-1005
     NotImplemented,
 }
@@ -61,6 +62,7 @@ impl RuntimeErrors {
             RuntimeErrors::InvalidCleanCommand(_) => 46,
             RuntimeErrors::ProjectNotInitialized => 47,
             RuntimeErrors::CMakeProjectNotGenerated => 48,
+            RuntimeErrors::GenerateProjectNtMsvcNonWindows => 49,
             // Not implemented 1000-1005
             RuntimeErrors::NotImplemented => 1000,
         }
@@ -246,6 +248,12 @@ impl RuntimeErrors {
             }
             RuntimeErrors::CMakeProjectNotGenerated => {
                 format!("|Error {}| CMake project not generated", self.error_code())
+            }
+            RuntimeErrors::GenerateProjectNtMsvcNonWindows => {
+                format!(
+                    "|Error {}| The system type 'nt/msvc' is only supported on Windows",
+                    self.error_code()
+                )
             }
             // Not implemented 1000-1005
             RuntimeErrors::NotImplemented => {

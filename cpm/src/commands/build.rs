@@ -247,6 +247,12 @@ fn generate_cmake_project(settings: &mut Settings, system_type: &str, build_type
     let build_dir = settings.build_dir.clone();
     let toolchain_path = settings.vcpkg_path.clone();
 
+    // Throw error if building msvc for non-windows
+    if system_type == "nt/msvc" && !cfg!(target_os = "windows") {
+        error!("Cannot build for 'nt/msvc' on a non-Windows system.");
+        RuntimeErrors::GenerateProjectNtMsvcNonWindows.exit();
+    }
+
     // If system_type is "nt/msvc", then the toolchain path must be set.
     if system_type == "nt/msvc" && toolchain_path.is_empty() {
         error!(
