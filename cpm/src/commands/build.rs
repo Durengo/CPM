@@ -19,7 +19,6 @@ const BUILD_DIR_NAME: &str = "build";
 #[cfg(target_os = "macos")]
 const BUILD_DIR_NAME: &str = "build";
 
-
 #[cfg(target_os = "windows")]
 const INSTALL_DIR_NAME: &str = "Install";
 #[cfg(target_os = "linux")]
@@ -84,6 +83,8 @@ pub fn run(args: BuildArgs) {
             info!("Build Type: Release");
             "Release"
         };
+
+        cache_cmake_build_type(&mut settings, build_type);
 
         generate_cmake_codemodel_v2(&settings);
 
@@ -159,6 +160,8 @@ pub fn run(args: BuildArgs) {
             "Release"
         };
 
+        cache_cmake_build_type(&mut settings, build_type);
+
         build_cmake_project(&settings, build_type);
 
         info!("Project built successfully.");
@@ -184,6 +187,12 @@ pub fn run(args: BuildArgs) {
     if args.source_targets {
         cache_cmake_targets(&mut settings);
     }
+}
+
+fn cache_cmake_build_type(settings: &mut Settings, build_type: &str) {
+    info!("Caching CMake build type: {}", build_type);
+    settings.cmake_build_type = build_type.to_string();
+    let _ = settings.save_default();
 }
 
 fn cache_cmake_targets(settings: &mut Settings) {
