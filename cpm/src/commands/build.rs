@@ -91,6 +91,8 @@ pub fn run(args: BuildArgs) {
     }
 
     if currently_cross_compiling {
+        info!("Cross-compilation detected. Running cross-compilation build process.");
+
         check_build_type(&args);
 
         let build_type = if args.debug_build_type {
@@ -128,8 +130,6 @@ pub fn run(args: BuildArgs) {
 
             cache_cmake_build_type(&mut settings, build_type);
 
-            export_crucial_variables_to_root_file(&settings);
-
             build_cmake_project_cross_compilation(&settings, build_type);
 
             info!("Project built successfully.");
@@ -147,8 +147,6 @@ pub fn run(args: BuildArgs) {
                 "Release"
             };
 
-            export_crucial_variables_to_root_file(&settings);
-
             install_cmake_project(&settings, build_type);
 
             info!("Project installed successfully.");
@@ -160,6 +158,10 @@ pub fn run(args: BuildArgs) {
 
         return;
     } else {
+        info!("Cross-compilation not detected. Running default build process.");
+        clean_cross_compile_target(&settings);
+        export_crucial_variables_to_root_file(&settings);
+
         if let Some(maybe_generate_args) = &args.generate_project {
             check_build_type(&args);
 
@@ -173,7 +175,8 @@ pub fn run(args: BuildArgs) {
 
             cache_cmake_build_type(&mut settings, build_type);
 
-            clean_cross_compile_target(&settings);
+            // clean_cross_compile_target(&settings);
+            // export_crucial_variables_to_root_file(&settings);
 
             generate_cmake_codemodel_v2(&settings);
 
@@ -251,7 +254,8 @@ pub fn run(args: BuildArgs) {
 
             cache_cmake_build_type(&mut settings, build_type);
 
-            clean_cross_compile_target(&settings);
+            // clean_cross_compile_target(&settings);
+            // export_crucial_variables_to_root_file(&settings);
 
             build_cmake_project(&settings, build_type);
 
@@ -270,7 +274,8 @@ pub fn run(args: BuildArgs) {
                 "Release"
             };
 
-            clean_cross_compile_target(&settings);
+            // clean_cross_compile_target(&settings);
+            // export_crucial_variables_to_root_file(&settings);
 
             install_cmake_project(&settings, build_type);
 
@@ -284,7 +289,7 @@ pub fn run(args: BuildArgs) {
 }
 
 fn cache_cmake_build_type(settings: &mut Settings, build_type: &str) {
-    info!("Caching CMake build type: {}", build_type);
+    // info!("Caching CMake build type: {}", build_type);
     settings.cmake_build_type = build_type.to_string();
     let _ = settings.save_default();
 }
@@ -318,7 +323,7 @@ fn cache_cmake_targets(settings: &mut Settings) {
                     match api_response {
                         Ok(response) => {
                             // Log
-                            info!("Found CMake API response: {:#?}", response);
+                            // info!("Found CMake API response: {:#?}", response);
                             // Depending on the compiler and build system we need to capture targets differently
 
                             // NT/MSVC
@@ -330,10 +335,10 @@ fn cache_cmake_targets(settings: &mut Settings) {
                                     .filter(|config| config.name == settings.cmake_build_type)
                                     .flat_map(|config| &config.targets)
                                     .for_each(|target| {
-                                        info!(
-                                            "Found target for {} build: {}",
-                                            settings.cmake_build_type, target.name
-                                        );
+                                        // info!(
+                                        //     "Found target for {} build: {}",
+                                        //     settings.cmake_build_type, target.name
+                                        // );
                                         targets.push(target.name.clone());
                                     });
                             }
@@ -347,10 +352,10 @@ fn cache_cmake_targets(settings: &mut Settings) {
                                     .iter()
                                     .flat_map(|config| &config.targets)
                                     .for_each(|target| {
-                                        info!(
-                                            "Found target for {} build: {}",
-                                            settings.cmake_build_type, target.name
-                                        );
+                                        // info!(
+                                        //     "Found target for {} build: {}",
+                                        //     settings.cmake_build_type, target.name
+                                        // );
                                         targets.push(target.name.clone());
                                     });
                             }
@@ -364,10 +369,10 @@ fn cache_cmake_targets(settings: &mut Settings) {
                                     .filter(|config| config.name == settings.cmake_build_type)
                                     .flat_map(|config| &config.targets)
                                     .for_each(|target| {
-                                        info!(
-                                            "Found target for {} build: {}",
-                                            settings.cmake_build_type, target.name
-                                        );
+                                        // info!(
+                                        //     "Found target for {} build: {}",
+                                        //     settings.cmake_build_type, target.name
+                                        // );
                                         targets.push(target.name.clone());
                                     });
                             }
@@ -402,10 +407,15 @@ fn check_build_type(args: &BuildArgs) {
     }
 }
 
+#[allow(unreachable_code)]
+#[allow(unused_variables)]
 fn build_cmake_project_cross_compilation(settings: &Settings, build_type: &str) {
     let build_dir = settings.build_dir.clone();
     // let source_dir_wsl = cmd::convert_to_wsl_path(source_dir);
     let build_dir_wsl = cmd::convert_to_wsl_path(&build_dir);
+
+    error!("Cross-compilation build not fully implemented yet.");
+    return;
 
     cmd::execute_wsl_command(vec![
         "cmake".to_string(),
@@ -426,7 +436,7 @@ fn generate_cmake_project_cross_compilation(settings: &mut Settings, build_type:
     let preset = generate_preset_for_cross_compilation(
         &cross_compile_target_with_generator,
         &source_dir,
-        &build_dir
+        &build_dir,
     );
 
     debug!("Preset: {:#?}", preset);
@@ -447,7 +457,7 @@ fn generate_cmake_project_cross_compilation(settings: &mut Settings, build_type:
 fn generate_preset_for_cross_compilation(
     cross_compile_target_with_generator: &str,
     source_dir: &str,
-    build_dir: &str
+    build_dir: &str,
 ) -> Vec<String> {
     let source_dir_wsl = cmd::convert_to_wsl_path(source_dir);
     let build_dir_wsl = cmd::convert_to_wsl_path(build_dir);
@@ -705,12 +715,15 @@ fn clean_cmake_project(settings: &Settings, what_to_clean: &str) {
 // cmake_build_type => .BUILD_TYPE
 // cross_compile_target => .CROSS_COMPILE_TARGET
 fn export_crucial_variables_to_root_file(settings: &Settings) {
-    let root_cmake_file = Path::new(&settings.working_dir).join("CMakeLists.txt");
+    let artifacts = Path::new(&settings.working_dir).join("Artifacts");
+
+    // artifacts path
+    info!("Artifacts path: {}", artifacts.display());
 
     let build_type = format!("{}\n", settings.cmake_build_type);
 
     // The above is what we will include in the file but the files themselves will be called .BUILD_TYPE and .CROSS_COMPILE_TARGET for cmake_build_type and cross_compile_target respectively.
-    let build_type_file = root_cmake_file.with_file_name(".BUILD_TYPE");
+    let build_type_file = artifacts.join(".BUILD_TYPE");
 
     // Write the build type to the file
     match std::fs::write(&build_type_file, build_type) {
@@ -730,8 +743,13 @@ fn export_crucial_variables_to_root_file(settings: &Settings) {
         return;
     }
 
+    // If we are not cross compiling then also return
+    if !settings.cross_compile {
+        return;
+    }
+
     let cross_compile_target = format!("{}\n", settings.cross_compile_target);
-    let cross_compile_target_file = root_cmake_file.with_file_name(".CROSS_COMPILE_TARGET");
+    let cross_compile_target_file = artifacts.join(".CROSS_COMPILE_TARGET");
 
     // Write the cross compile target to the file
     match std::fs::write(&cross_compile_target_file, cross_compile_target) {
@@ -749,8 +767,8 @@ fn export_crucial_variables_to_root_file(settings: &Settings) {
 
 // Clean up .CROSS_COMPILE_TARGET
 fn clean_cross_compile_target(settings: &Settings) {
-    let root_cmake_file = Path::new(&settings.working_dir).join("CMakeLists.txt");
-    let cross_compile_target_file = root_cmake_file.with_file_name(".CROSS_COMPILE_TARGET");
+    let artifacts = Path::new(&settings.working_dir).join("Artifacts");
+    let cross_compile_target_file = artifacts.join(".CROSS_COMPILE_TARGET");
 
     match std::fs::remove_file(&cross_compile_target_file) {
         Ok(_) => {
