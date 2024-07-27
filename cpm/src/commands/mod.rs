@@ -1,8 +1,8 @@
 use clap::Parser;
 
-pub mod init;
 pub mod build;
 pub mod cache;
+pub mod init;
 pub mod setup;
 
 #[derive(Parser)]
@@ -126,6 +126,19 @@ pub struct BuildArgs {
     /// Source targets from CMake. Project must be generated first, otherwise it will fail.
     #[clap(required = false, long, short, action = clap::ArgAction::SetTrue, verbatim_doc_comment)]
     pub source_targets: bool,
+
+    /// Cross-compile the project. Must be set to the specific target
+    /// Cross-compilation targets:
+    /// Raspberry Pi:
+    ///     pi4/umake ---> Raspberry Pi 4
+    #[clap(
+        required = false,
+        long,
+        num_args(1),
+        value_names = &["CROSS-COMPILE-TARGET"],
+        verbatim_doc_comment
+    )]
+    pub cross_compile: Option<String>,
 }
 
 #[derive(Parser, Debug)]
