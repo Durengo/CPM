@@ -1,13 +1,13 @@
-use clap::{ CommandFactory, Parser };
+use clap::{CommandFactory, Parser};
 use spdlog::prelude::*;
 
 use crate::errors::errors::RuntimeErrors;
-use crate::internal::settings::Settings;
 use crate::internal::logger::Loggers;
+use crate::internal::settings::Settings;
 
 mod commands;
-mod internal;
 mod errors;
+mod internal;
 
 #[derive(Parser)]
 #[clap(author, about, version, long_about)]
@@ -25,7 +25,6 @@ struct Cli {
     /// WARNING: This will overwrite the current settings file. This will break the current state if already initialized in the current directory.
     #[clap(long, short, global = true, action = clap::ArgAction::SetTrue, verbatim_doc_comment)]
     pub force_reinit: bool,
-
     // TODO: Find a better logging solution. SPDLOG is not working as expected.
     // // Flag to show debug logs
     // /// Toggle verbose output
@@ -93,8 +92,7 @@ fn check_cache(reinit: bool) -> std::io::Result<Settings> {
             Settings::delete(&settings_path)?;
             let settings = Settings::init(true)?;
             Ok(settings)
-        }
-        else {
+        } else {
             let settings = Settings::init(false)?;
             Ok(settings)
         }
