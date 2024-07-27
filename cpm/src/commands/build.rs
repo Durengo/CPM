@@ -73,7 +73,24 @@ pub fn run(args: BuildArgs) {
         }
     }
 
-    if let Some(maybe_generate_args) = &args.generate_project {
+    // Check if cross-compilation flag was passed
+    let mut currently_cross_compiling = false;
+
+    if let Some(cross_compile) = &args.cross_compile {
+        info!("Cross-compilation flag detected: {}", cross_compile);
+        // In settings set cross_compile to true
+        settings.cross_compile = true;
+        settings.cross_compile_target_with_generator = cross_compile.clone();
+        // This is the format target/generator, so we need to take everything before the '/'
+        settings.cross_compile_target =
+            cross_compile.split('/').collect::<Vec<&str>>()[0].to_string();
+        let _ = settings.save_default();
+
+        // Set an internal flag so that if we pass cross-compilation flag we do not initiate default build process
+        currently_cross_compiling = true;
+    }
+
+    if currently_cross_compiling {
         check_build_type(&args);
 
         let build_type = if args.debug_build_type {
@@ -86,102 +103,179 @@ pub fn run(args: BuildArgs) {
 
         cache_cmake_build_type(&mut settings, build_type);
 
+        export_crucial_variables_to_root_file(&settings);
+
         generate_cmake_codemodel_v2(&settings);
 
-        match maybe_generate_args {
-            Some(generate_args) if !generate_args.trim().is_empty() => {
-                info!(
-                    "Generating CMake project for system type '{}' with build type '{}'",
-                    generate_args, build_type
-                );
-                generate_cmake_project(&mut settings, generate_args, build_type);
-            }
-            _ => {
-                warn!(
-                    "No system type provided or empty. Will attempt to use the last cmake configuration command."
-                );
-                let last_cmd = &settings.last_cmake_configuration_command;
-                if !last_cmd.is_empty() {
-                    cmd::execute_and_display_output_live(last_cmd.clone());
-                } else {
-                    error!("No previous CMake configuration command available.");
-                }
-            }
+        if let Some(_maybe_generate_args) = &args.generate_project {
+            generate_cmake_project_cross_compilation(&mut settings, build_type);
+
+            cache_cmake_targets(&mut settings);
+            info!("Project generated successfully.");
         }
 
-        cache_cmake_targets(&mut settings);
+        if args.build_project {
+            check_build_type(&args);
 
-        // if generate_args.trim().is_empty() {
+            // Depending on build type set string variable as "Debug" or "Release"
+            let build_type = if args.debug_build_type {
+                info!("Build Type: Debug");
+                "Debug"
+            } else {
+                info!("Build Type: Release");
+                "Release"
+            };
+
+            cache_cmake_build_type(&mut settings, build_type);
+
+            export_crucial_variables_to_root_file(&settings);
+
+            build_cmake_project_cross_compilation(&settings, build_type);
+
+            info!("Project built successfully.");
+        }
+
+        if args.install_project {
+            check_build_type(&args);
+
+            // Depending on build type set string variable as "Debug" or "Release"
+            let build_type = if args.debug_build_type {
+                info!("Build Type: Debug");
+                "Debug"
+            } else {
+                info!("Build Type: Release");
+                "Release"
+            };
+
+            export_crucial_variables_to_root_file(&settings);
+
+            install_cmake_project(&settings, build_type);
+
+            info!("Project installed successfully.");
+        }
+
+        // Turn this off after we are done with cross-compilation
+        settings.cross_compile = false;
+        let _ = settings.save_default();
+
+        return;
+    } else {
+        if let Some(maybe_generate_args) = &args.generate_project {
+            check_build_type(&args);
+
+            let build_type = if args.debug_build_type {
+                info!("Build Type: Debug");
+                "Debug"
+            } else {
+                info!("Build Type: Release");
+                "Release"
+            };
+
+            cache_cmake_build_type(&mut settings, build_type);
+
+            clean_cross_compile_target(&settings);
+
+            generate_cmake_codemodel_v2(&settings);
+
+            match maybe_generate_args {
+                Some(generate_args) if !generate_args.trim().is_empty() => {
+                    info!(
+                        "Generating CMake project for system type '{}' with build type '{}'",
+                        generate_args, build_type
+                    );
+                    generate_cmake_project(&mut settings, generate_args, build_type);
+                }
+                _ => {
+                    warn!(
+                        "No system type provided or empty. Will attempt to use the last cmake configuration command."
+                    );
+                    let last_cmd = &settings.last_cmake_configuration_command;
+                    if !last_cmd.is_empty() {
+                        cmd::execute_and_display_output_live(last_cmd.clone());
+                    } else {
+                        error!("No previous CMake configuration command available.");
+                    }
+                }
+            }
+
+            cache_cmake_targets(&mut settings);
+
+            // if generate_args.trim().is_empty() {
+            //     warn!("No system type provided. Will attempt to use last cmake configuration command.");
+
+            //     let last_cmd = &settings.last_cmake_configuration_command;
+
+            //     cmd::execute_and_display_output(last_cmd.clone());
+            // } else {
+            //     info!(
+            //         "Generating CMake project for system type '{}' with build type '{}'",
+            //         generate_args,
+            //         build_type
+            //     );
+            //     generate_cmake_project(&mut settings, &generate_args, &build_type);
+            // }
+
+            info!("Project generated successfully.");
+        }
+        // else if !args.generate_project.is_empty() {
+        //     check_build_type(&args);
+
+        //     let build_type = if args.debug_build_type {
+        //         info!("Build Type: Debug");
+        //         "Debug"
+        //     } else {
+        //         info!("Build Type: Release");
+        //         "Release"
+        //     };
+
         //     warn!("No system type provided. Will attempt to use last cmake configuration command.");
 
         //     let last_cmd = &settings.last_cmake_configuration_command;
 
         //     cmd::execute_and_display_output(last_cmd.clone());
-        // } else {
-        //     info!(
-        //         "Generating CMake project for system type '{}' with build type '{}'",
-        //         generate_args,
-        //         build_type
-        //     );
-        //     generate_cmake_project(&mut settings, &generate_args, &build_type);
+
+        //     info!("Project generated successfully.");
         // }
 
-        info!("Project generated successfully.");
-    }
-    // else if !args.generate_project.is_empty() {
-    //     check_build_type(&args);
+        if args.build_project {
+            check_build_type(&args);
 
-    //     let build_type = if args.debug_build_type {
-    //         info!("Build Type: Debug");
-    //         "Debug"
-    //     } else {
-    //         info!("Build Type: Release");
-    //         "Release"
-    //     };
+            // Depending on build type set string variable as "Debug" or "Release"
+            let build_type = if args.debug_build_type {
+                info!("Build Type: Debug");
+                "Debug"
+            } else {
+                info!("Build Type: Release");
+                "Release"
+            };
 
-    //     warn!("No system type provided. Will attempt to use last cmake configuration command.");
+            cache_cmake_build_type(&mut settings, build_type);
 
-    //     let last_cmd = &settings.last_cmake_configuration_command;
+            clean_cross_compile_target(&settings);
 
-    //     cmd::execute_and_display_output(last_cmd.clone());
+            build_cmake_project(&settings, build_type);
 
-    //     info!("Project generated successfully.");
-    // }
+            info!("Project built successfully.");
+        }
 
-    if args.build_project {
-        check_build_type(&args);
+        if args.install_project {
+            check_build_type(&args);
 
-        // Depending on build type set string variable as "Debug" or "Release"
-        let build_type = if args.debug_build_type {
-            info!("Build Type: Debug");
-            "Debug"
-        } else {
-            info!("Build Type: Release");
-            "Release"
-        };
+            // Depending on build type set string variable as "Debug" or "Release"
+            let build_type = if args.debug_build_type {
+                info!("Build Type: Debug");
+                "Debug"
+            } else {
+                info!("Build Type: Release");
+                "Release"
+            };
 
-        cache_cmake_build_type(&mut settings, build_type);
+            clean_cross_compile_target(&settings);
 
-        build_cmake_project(&settings, build_type);
+            install_cmake_project(&settings, build_type);
 
-        info!("Project built successfully.");
-    }
-
-    if args.install_project {
-        check_build_type(&args);
-
-        // Depending on build type set string variable as "Debug" or "Release"
-        let build_type = if args.debug_build_type {
-            info!("Build Type: Debug");
-            "Debug"
-        } else {
-            info!("Build Type: Release");
-            "Release"
-        };
-
-        install_cmake_project(&settings, build_type);
-
-        info!("Project installed successfully.");
+            info!("Project installed successfully.");
+        }
     }
 
     if args.source_targets {
@@ -305,6 +399,110 @@ fn check_build_type(args: &BuildArgs) {
     if args.debug_build_type && args.release_build_type {
         error!("Both debug and release build types set. Use only one.");
         RuntimeErrors::BuildTypeBothSet.exit();
+    }
+}
+
+fn build_cmake_project_cross_compilation(settings: &Settings, build_type: &str) {
+    let build_dir = settings.build_dir.clone();
+    // let source_dir_wsl = cmd::convert_to_wsl_path(source_dir);
+    let build_dir_wsl = cmd::convert_to_wsl_path(&build_dir);
+
+    cmd::execute_wsl_command(vec![
+        "cmake".to_string(),
+        "--build".to_string(),
+        build_dir_wsl.clone(),
+        "--config".to_string(),
+        build_type.to_string(),
+    ]);
+}
+
+fn generate_cmake_project_cross_compilation(settings: &mut Settings, build_type: &str) {
+    let source_dir = settings.working_dir.clone();
+    let build_dir = settings.build_dir.clone();
+    let cross_compile_target_with_generator = settings.cross_compile_target_with_generator.clone();
+
+    // Prepare the presets
+    // Match system type string
+    let preset = generate_preset_for_cross_compilation(
+        &cross_compile_target_with_generator,
+        &source_dir,
+        &build_dir
+    );
+
+    debug!("Preset: {:#?}", preset);
+
+    // Cache system and build type and the last command.
+    settings.cmake_system_type = cross_compile_target_with_generator.to_string();
+    settings.cmake_build_type = build_type.to_string();
+    settings.last_cmake_configuration_command = preset.clone();
+    let _ = settings.save_default();
+
+    // cmd::execute_and_display_output_live(preset);
+    cmd::execute_wsl_command(preset);
+
+    debug!("Settings: {:#?}", settings);
+}
+
+// Generate preset for cross compilation targets
+fn generate_preset_for_cross_compilation(
+    cross_compile_target_with_generator: &str,
+    source_dir: &str,
+    build_dir: &str
+) -> Vec<String> {
+    let source_dir_wsl = cmd::convert_to_wsl_path(source_dir);
+    let build_dir_wsl = cmd::convert_to_wsl_path(build_dir);
+
+    match cross_compile_target_with_generator {
+        "pi4/umake" => {
+            vec![
+                "cmake".to_string(),
+                "-S".to_string(),
+                format!("\"{}\"", source_dir_wsl),
+                "-B".to_string(),
+                format!("\"{}\"", build_dir_wsl),
+                "-G".to_string(),
+                "\"Unix Makefiles\"".to_string(),
+                "-DCMAKE_C_COMPILER=/opt/cross-pi-gcc/bin/arm-linux-gnueabihf-gcc".to_string(),
+                // "-DCMAKE_C_COMPILER=/home/{USER}/raspberrypi/rootfs/cross-pi-gcc/bin/arm-linux-gnueabihf-gcc".to_string(),
+                "-DCMAKE_CXX_COMPILER=/opt/cross-pi-gcc/bin/arm-linux-gnueabihf-g++".to_string(),
+                // "-DCMAKE_CXX_COMPILER=/home/{USER}/raspberrypi/rootfs/cross-pi-gcc/bin/arm-linux-gnueabihf-g++".to_string(),
+                // "-DCMAKE_SYSROOT=/opt/cross-pi-gcc-10.3.0-64/aarch64-linux-gnu".to_string(),
+                // "-DCMAKE_FIND_ROOT_PATH=/opt/cross-pi-gcc-10.3.0-64/aarch64-linux-gnu".to_string(),
+                // "-DCMAKE_FIND_ROOT_PATH=/home/{USER}/raspberrypi/rootfs".to_string(),
+                "-DCMAKE_FIND_ROOT_PATH_MODE_PROGRAM=NEVER".to_string(),
+                "-DCMAKE_FIND_ROOT_PATH_MODE_LIBRARY=ONLY".to_string(),
+                "-DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE=ONLY".to_string(),
+                // "-DCMAKE_SYSTEM_NAME=Linux".to_string(),
+                // "-DCMAKE_SYSTEM_PROCESSOR=arm".to_string(),
+                // "-DCMAKE_C_COMPILER=arm-linux-gnueabihf-gcc".to_string(),
+                // "-DCMAKE_CXX_COMPILER=arm-linux-gnueabihf-g++".to_string(),
+                // "-DCMAKE_FIND_ROOT_PATH=/usr/arm-linux-gnueabihf".to_string(),
+                // "-DCMAKE_FIND_ROOT_PATH_MODE_PROGRAM=NEVER".to_string(),
+                // "-DCMAKE_FIND_ROOT_PATH_MODE_LIBRARY=ONLY".to_string(),
+                // "-DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE=ONLY".to_string(),
+
+                // "-DCMAKE_SYSTEM_NAME=Linux".to_string(),
+                // "-DCMAKE_SYSTEM_PROCESSOR=arm".to_string(),
+                // "-DCMAKE_C_COMPILER=/usr/bin/arm-linux-gnueabihf-gcc".to_string(),
+                // "-DCMAKE_CXX_COMPILER=/usr/bin/arm-linux-gnueabihf-g++".to_string(),
+                // // "-DCMAKE_SYSROOT=/usr/arm-linux-gnueabihf".to_string(),
+                // "-DCMAKE_FIND_ROOT_PATH=/usr/arm-linux-gnueabihf".to_string(),
+                // "-DCMAKE_FIND_ROOT_PATH_MODE_PROGRAM=NEVER".to_string(),
+                // "-DCMAKE_FIND_ROOT_PATH_MODE_LIBRARY=ONLY".to_string(),
+                // "-DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE=ONLY".to_string(),
+            ]
+        }
+        _ => {
+            error!(
+                "Invalid cross compilation target: {}",
+                cross_compile_target_with_generator
+            );
+            RuntimeErrors::CrossCompilationGenerateProjectInvalidTarget(
+                cross_compile_target_with_generator.to_string(),
+            )
+            .exit();
+            vec![]
+        }
     }
 }
 
@@ -499,6 +697,73 @@ fn clean_cmake_project(settings: &Settings, what_to_clean: &str) {
             Err(e) => {
                 error!("Error removing the '{}' directory: {}", INSTALL_DIR_NAME, e);
             }
+        }
+    }
+}
+
+// We will take cmake_build_type and cross_compile_target and export it to where our root CMakeLists.txt is. This will be done for each variable.
+// cmake_build_type => .BUILD_TYPE
+// cross_compile_target => .CROSS_COMPILE_TARGET
+fn export_crucial_variables_to_root_file(settings: &Settings) {
+    let root_cmake_file = Path::new(&settings.working_dir).join("CMakeLists.txt");
+
+    let build_type = format!("{}\n", settings.cmake_build_type);
+
+    // The above is what we will include in the file but the files themselves will be called .BUILD_TYPE and .CROSS_COMPILE_TARGET for cmake_build_type and cross_compile_target respectively.
+    let build_type_file = root_cmake_file.with_file_name(".BUILD_TYPE");
+
+    // Write the build type to the file
+    match std::fs::write(&build_type_file, build_type) {
+        Ok(_) => {
+            info!(
+                "Successfully wrote build type to file: {}",
+                build_type_file.display()
+            );
+        }
+        Err(e) => {
+            error!("Failed to write build type to file: {}", e);
+        }
+    }
+
+    // First check if cross_compile_target is set or not empty. If yes then just return.
+    if settings.cross_compile_target.is_empty() {
+        return;
+    }
+
+    let cross_compile_target = format!("{}\n", settings.cross_compile_target);
+    let cross_compile_target_file = root_cmake_file.with_file_name(".CROSS_COMPILE_TARGET");
+
+    // Write the cross compile target to the file
+    match std::fs::write(&cross_compile_target_file, cross_compile_target) {
+        Ok(_) => {
+            info!(
+                "Successfully wrote cross compile target to file: {}",
+                cross_compile_target_file.display()
+            );
+        }
+        Err(e) => {
+            error!("Failed to write cross compile target to file: {}", e);
+        }
+    }
+}
+
+// Clean up .CROSS_COMPILE_TARGET
+fn clean_cross_compile_target(settings: &Settings) {
+    let root_cmake_file = Path::new(&settings.working_dir).join("CMakeLists.txt");
+    let cross_compile_target_file = root_cmake_file.with_file_name(".CROSS_COMPILE_TARGET");
+
+    match std::fs::remove_file(&cross_compile_target_file) {
+        Ok(_) => {
+            info!(
+                "Successfully removed the cross compile target file: {}",
+                cross_compile_target_file.display()
+            );
+        }
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
+            warn!("The cross compile target file does not exist. Skipping this step.");
+        }
+        Err(e) => {
+            error!("Error removing the cross compile target file: {}", e);
         }
     }
 }
