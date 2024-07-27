@@ -30,6 +30,8 @@ pub enum RuntimeErrors {
     ProjectNotInitialized,
     CMakeProjectNotGenerated,
     GenerateProjectNtMsvcNonWindows,
+    // Cross compilation related errors 51-60
+    CrossCompilationGenerateProjectInvalidTarget(String),
     // Not implemented 1000-1005
     NotImplemented,
 }
@@ -65,6 +67,8 @@ impl RuntimeErrors {
             RuntimeErrors::ProjectNotInitialized => 47,
             RuntimeErrors::CMakeProjectNotGenerated => 48,
             RuntimeErrors::GenerateProjectNtMsvcNonWindows => 49,
+            // Cross compilation related errors 51-60
+            RuntimeErrors::CrossCompilationGenerateProjectInvalidTarget(_) => 51,
             // Not implemented 1000-1005
             RuntimeErrors::NotImplemented => 1000,
         }
@@ -210,7 +214,10 @@ impl RuntimeErrors {
                 )
             }
             RuntimeErrors::UnsupportedToolMacOS(None) => {
-                format!("|Error {}| The tool is not supported on MacOS", self.error_code())
+                format!(
+                    "|Error {}| The tool is not supported on MacOS",
+                    self.error_code()
+                )
             }
             // Build Command related errors 31-40
             RuntimeErrors::GenerateProjectInvalidSystemType(Some(system_type)) => {
@@ -265,6 +272,14 @@ impl RuntimeErrors {
                 format!(
                     "|Error {}| The system type 'nt/msvc' is only supported on Windows",
                     self.error_code()
+                )
+            }
+            // Cross compilation related errors 51-60
+            RuntimeErrors::CrossCompilationGenerateProjectInvalidTarget(target) => {
+                format!(
+                    "|Error {}| The cross-compilation target '{}' is invalid",
+                    self.error_code(),
+                    target
                 )
             }
             // Not implemented 1000-1005
