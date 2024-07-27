@@ -515,6 +515,25 @@ fn generate_cmake_project(settings: &mut Settings, system_type: &str, build_type
         RuntimeErrors::GenerateProjectNtMsvcNoToolchain.exit();
     }
 
+    // Add .VCPKG_PATH to artifact directory
+    if system_type == "nt/msvc" {
+        let artifacts = Path::new(&settings.working_dir).join("Artifacts");
+        let vcpkg_path_file = artifacts.join(".VCPKG_PATH");
+
+        // Write the VCPKG path to the file
+        match std::fs::write(&vcpkg_path_file, &toolchain_path) {
+            Ok(_) => {
+                info!(
+                    "Successfully wrote VCPKG path to file: {}",
+                    vcpkg_path_file.display()
+                );
+            }
+            Err(e) => {
+                error!("Failed to write VCPKG path to file: {}", e);
+            }
+        }
+    }
+
     // Prepare the presets
     // Match system type string
     let preset = generate_preset(&system_type, &source_dir, &build_dir, &toolchain_path);
