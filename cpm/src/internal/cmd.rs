@@ -1,5 +1,5 @@
 use spdlog::prelude::*;
-use std::io::{BufRead, BufReader};
+use std::io::{self, BufRead, BufReader, Write};
 use std::process::{Command, Output, Stdio};
 use std::thread;
 
@@ -23,7 +23,7 @@ pub fn execute_and_display_output_live(cmd_array: Vec<String>) {
         RuntimeErrors::NoCommandsProvided.exit();
     }
 
-    trace!("Executing command: {}", cmd_array.join(" "));
+    info!("Executing command: {}", cmd_array.join(" "));
 
     match init(cmd_array.clone()).as_str() {
         "windows" => {
@@ -65,7 +65,7 @@ pub fn execute_and_display_output_live(cmd_array: Vec<String>) {
             stderr_handle
                 .join()
                 .expect("The stderr thread has panicked");
-        },
+        }
         "linux" => {
             let (command, args) = cmd_array.split_first().unwrap();
             let mut child = Command::new(command)
@@ -299,7 +299,6 @@ pub fn execute_and_return_output(cmd_array: Vec<String>) -> String {
             //         format!("Command execution failed: {}", e)
             //     }
             // }
-
         }
         "macos" => {
             let (command, args) = cmd_array.split_first().unwrap();
@@ -321,7 +320,117 @@ pub fn execute_and_return_output(cmd_array: Vec<String>) -> String {
     }
 }
 
-fn check_supported_os(settings: &Settings) -> String {
+pub fn execute_wsl_command_and_display_output_live(cmd_array: Vec<String>) {
+    if cmd_array.is_empty() {
+        RuntimeErrors::NoCommandsProvided.exit();
+    }
+
+    trace!("Executing WSL command: {}", cmd_array.join(" "));
+
+    let (command, args) = cmd_array.split_first().unwrap();
+
+    let mut child = Command::new("wsl")
+        .arg("-e")
+        .arg("bash")
+        .arg("-c")
+        .arg(&format!("{} {}", command, args.join(" ")))
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .expect("Failed to execute WSL command");
+
+    info!("WSL command: {}", cmd_array.join(" "));
+
+    let stdout_thread = {
+        let stdout = child.stdout.take().unwrap();
+        thread::spawn(move || {
+            let stdout_reader = BufReader::new(stdout);
+            for line in stdout_reader.lines() {
+                if let Ok(line) = line {
+                    let cleaned_line = line.trim_end();
+                    println!("{}", cleaned_line);
+                    io::stdout().flush().unwrap();
+                }
+            }
+        })
+    };
+
+    let stderr_thread = {
+        let stderr = child.stderr.take().unwrap();
+        thread::spawn(move || {
+            let stderr_reader = BufReader::new(stderr);
+            for line in stderr_reader.lines() {
+                if let Ok(line) = line {
+                    let cleaned_line = line.trim_end();
+                    eprintln!("{}", cleaned_line);
+                    io::stderr().flush().unwrap();
+                }
+            }
+        })
+    };
+
+    let status = child.wait().expect("Failed to wait on child");
+
+    stdout_thread.join().expect("Failed to join stdout thread");
+    stderr_thread.join().expect("Failed to join stderr thread");
+
+    if !status.success() {
+        RuntimeErrors::CmdCaughtStdErr(Some(format!(
+            "Command exited with status code: {}",
+            status.code().unwrap_or_default()
+        )));
+    }
+}
+
+pub fn execute_wsl_command(cmd_array: Vec<String>) {
+    if cmd_array.is_empty() {
+        RuntimeErrors::NoCommandsProvided.exit();
+    }
+
+    trace!("Executing WSL command: {}", cmd_array.join(" "));
+
+    let (command, args) = cmd_array.split_first().unwrap();
+
+    let output = Command::new("wsl")
+        .arg("-e")
+        .arg("bash")
+        .arg("-c")
+        .arg(&format!("{} {}", command, args.join(" ")))
+        .output()
+        .expect("Failed to execute WSL command");
+
+    info!("WSL command: {}", cmd_array.join(" "));
+
+    if !output.stdout.is_empty() {
+        let out = String::from_utf8_lossy(&output.stdout)
+            .trim_end_matches(|c| (c == '\r' || c == '\n'))
+            .to_string();
+        info!("WSL STDOUT:\n{}", out);
+    }
+    if !output.stderr.is_empty() {
+        let err = String::from_utf8_lossy(&output.stderr)
+            .trim_end_matches(|c| (c == '\r' || c == '\n'))
+            .to_string();
+        error!("WSL STDERR:\n{}", err);
+        RuntimeErrors::CmdCaughtStdErr(Some(err));
+    }
+}
+
+pub fn convert_to_wsl_path(windows_path: &str) -> String {
+    // Check if the path is valid and contains a drive letter
+    if windows_path.len() < 2 || &windows_path[1..2] != ":" {
+        panic!("Invalid Windows path format");
+    }
+
+    // Extract the drive letter and the rest of the path
+    let drive_letter = windows_path[0..1].to_lowercase();
+    let rest_of_path = &windows_path[2..].replace("\\", "/");
+
+    // Construct the WSL path
+    format!("/mnt/{}/{}", drive_letter, rest_of_path)
+}
+
+pub fn check_supported_os(settings: &Settings) -> String {
     let env = &settings.os;
 
     match env.as_str() {
