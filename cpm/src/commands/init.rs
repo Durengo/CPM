@@ -15,7 +15,6 @@ const BUILD_DIR_NAME: &str = "build";
 #[cfg(target_os = "macos")]
 const BUILD_DIR_NAME: &str = "build";
 
-
 #[cfg(target_os = "windows")]
 const INSTALL_DIR_NAME: &str = "Install";
 #[cfg(target_os = "linux")]
@@ -84,6 +83,7 @@ fn osx(settings: &mut Settings) {
     create_entrypoint();
     set_build_dir(settings);
     set_install_dir(settings);
+    let _ = settings.init_artifacts_dir();
 }
 
 #[cfg(target_os = "macos")]
@@ -105,6 +105,7 @@ fn linux(settings: &mut Settings) {
     create_entrypoint();
     set_build_dir(settings);
     set_install_dir(settings);
+    let _ = settings.init_artifacts_dir();
 }
 
 #[cfg(target_os = "linux")]
@@ -126,6 +127,7 @@ fn windows(settings: &mut Settings) {
     create_entrypoint();
     set_build_dir(settings);
     set_install_dir(settings);
+    let _ = settings.init_artifacts_dir();
 }
 
 fn set_build_dir(settings: &mut Settings) {
@@ -136,7 +138,10 @@ fn set_build_dir(settings: &mut Settings) {
     // Create the build directory. If it already exists, it will just skip this step.
     std::fs::create_dir(&settings.build_dir).unwrap_or_else(|e| {
         if e.kind() == std::io::ErrorKind::AlreadyExists {
-            warn!("The '{}' directory already exists. Skipping this step.", BUILD_DIR_NAME);
+            warn!(
+                "The '{}' directory already exists. Skipping this step.",
+                BUILD_DIR_NAME
+            );
         } else {
             error!("Error creating the build directory: {}", e);
         }
@@ -152,7 +157,10 @@ fn set_install_dir(settings: &mut Settings) {
     // Create the install directory
     std::fs::create_dir(&settings.install_dir).unwrap_or_else(|e| {
         if e.kind() == std::io::ErrorKind::AlreadyExists {
-            warn!("The '{}' directory already exists. Skipping this step.", INSTALL_DIR_NAME);
+            warn!(
+                "The '{}' directory already exists. Skipping this step.",
+                INSTALL_DIR_NAME
+            );
         } else {
             error!("Error creating the install directory: {}", e);
         }
@@ -208,7 +216,7 @@ fn create_entrypoint() {
             // Make the file executable
             #[cfg(target_os = "macos")]
             chmod_file(&entrypoint_path);
-        },
+        }
         "windows" => {
             let entrypoint_path = Path::new(&settings.working_dir).join("cpm.bat");
             let entrypoint_content = format!("@echo off\n{} --no-init %*", settings.exe_path);
