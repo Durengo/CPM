@@ -515,21 +515,39 @@ fn generate_cmake_project(settings: &mut Settings, system_type: &str, build_type
         RuntimeErrors::GenerateProjectNtMsvcNoToolchain.exit();
     }
 
-    // Add .VCPKG_PATH to artifact directory
+    // Add .VCPKG_TOOLCHAIN_PATH and .VCPKG_ROOT_PATH to artifact directory
     if system_type == "nt/msvc" {
         let artifacts = Path::new(&settings.working_dir).join("Artifacts");
-        let vcpkg_path_file = artifacts.join(".VCPKG_PATH");
+        {
+            let vcpkg_path_file = artifacts.join(".VCPKG_TOOLCHAIN_PATH");
 
-        // Write the VCPKG path to the file
-        match std::fs::write(&vcpkg_path_file, &toolchain_path) {
-            Ok(_) => {
-                info!(
-                    "Successfully wrote VCPKG path to file: {}",
-                    vcpkg_path_file.display()
-                );
+            // Write the VCPKG toolchain file path to the file
+            match std::fs::write(&vcpkg_path_file, &settings.toolchain_path) {
+                Ok(_) => {
+                    info!(
+                        "Successfully wrote VCPKG path to file: {}",
+                        vcpkg_path_file.display()
+                    );
+                }
+                Err(e) => {
+                    error!("Failed to write VCPKG path to file: {}", e);
+                }
             }
-            Err(e) => {
-                error!("Failed to write VCPKG path to file: {}", e);
+        }
+        {
+            let vcpkg_root_path_file = artifacts.join(".VCPKG_ROOT_PATH");
+
+            // Write the VCPKG path to the file
+            match std::fs::write(&vcpkg_root_path_file, &settings.vcpkg_path) {
+                Ok(_) => {
+                    info!(
+                        "Successfully wrote VCPKG root path to file: {}",
+                        vcpkg_root_path_file.display()
+                    );
+                }
+                Err(e) => {
+                    error!("Failed to write VCPKG root path to file: {}", e);
+                }
             }
         }
     }
