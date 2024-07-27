@@ -522,7 +522,7 @@ fn generate_cmake_project(settings: &mut Settings, system_type: &str, build_type
             let vcpkg_path_file = artifacts.join(".VCPKG_TOOLCHAIN_PATH");
 
             // Write the VCPKG toolchain file path to the file
-            match std::fs::write(&vcpkg_path_file, &settings.toolchain_path) {
+            match std::fs::write(&vcpkg_path_file, &settings.vcpkg_path) {
                 Ok(_) => {
                     info!(
                         "Successfully wrote VCPKG path to file: {}",
@@ -538,7 +538,7 @@ fn generate_cmake_project(settings: &mut Settings, system_type: &str, build_type
             let vcpkg_root_path_file = artifacts.join(".VCPKG_ROOT_PATH");
 
             // Write the VCPKG path to the file
-            match std::fs::write(&vcpkg_root_path_file, &settings.vcpkg_path) {
+            match std::fs::write(&vcpkg_root_path_file, &settings.toolchain_path) {
                 Ok(_) => {
                     info!(
                         "Successfully wrote VCPKG root path to file: {}",
