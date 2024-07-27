@@ -35,6 +35,8 @@ pub struct Settings {
     pub last_command: Vec<String>,
     // Cached targets
     pub cmake_targets: Vec<String>,
+    // Artifacts cache location, should be within the working directory
+    pub artifacts_dir: String,
 }
 
 impl Settings {
@@ -91,6 +93,8 @@ impl Settings {
             last_command: vec![],
             // Cached targets
             cmake_targets: vec![],
+            // Artifacts cache location
+            artifacts_dir: "".to_string(),
         })
     }
 
@@ -168,10 +172,14 @@ impl Settings {
             "cmake_build_type" => Some(self.cmake_build_type.clone()),
             "cross_compile" => Some(self.cross_compile.to_string()),
             "cross_compile_target" => Some(self.cross_compile_target.clone()),
+            "cross_compile_target_with_generator" => {
+                Some(self.cross_compile_target_with_generator.clone())
+            }
             "last_cmake_configuration_command" => {
                 Some(self.last_cmake_configuration_command.join(" ").to_string())
             }
-            // Cached commands are locked
+            "last_command" => Some(self.last_command.join(" ").to_string()),
+            "cmake_targets" => Some(self.cmake_targets.join(" ").to_string()),
             _ => None,
         }
     }
@@ -227,11 +235,22 @@ impl Settings {
             "cross_compile_target" => {
                 self.cross_compile_target = value;
             }
+            "cross_compile_target_with_generator" => {
+                self.cross_compile_target_with_generator = value;
+            }
             "last_cmake_configuration_command" => {
                 self.last_cmake_configuration_command =
                     value.split_whitespace().map(|s| s.to_string()).collect();
             }
-            // Cached commands are locked
+            "last_command" => {
+                self.last_command = value.split_whitespace().map(|s| s.to_string()).collect();
+            }
+            "cmake_targets" => {
+                self.cmake_targets = value.split_whitespace().map(|s| s.to_string()).collect();
+            }
+            "artifacts_dir" => {
+                self.artifacts_dir = value;
+            }
             _ => {
                 return Err("Key not found".to_string());
             }
@@ -262,7 +281,8 @@ impl Settings {
             | "cross_compile_target_with_generator"
             | "last_cmake_configuration_command"
             | "last_command"
-            | "cmake_targets" => true,
+            | "cmake_targets"
+            | "artifacts_dir" => true,
             _ => false,
         }
     }
