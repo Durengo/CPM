@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use spdlog::info;
 use std::fs::{self, File};
 use std::io::{self, Read, Write};
 use std::path::Path;
@@ -106,6 +107,21 @@ impl Settings {
         }
 
         Self::load_or_init(&settings_path)
+    }
+
+    // Create a function which will create an 'Artifacts' folder within the working directory and set it's full path to artifacts_dir. It should also check before hand if it exists, if it does not, then create it. If it exists then make sure artifacts_dir is set.
+    pub fn init_artifacts_dir(&mut self) -> io::Result<()> {
+        info!("Initializing artifacts directory");
+
+        let working_dir = Path::new(&self.working_dir);
+        let artifacts_dir = working_dir.join("Artifacts");
+
+        if !artifacts_dir.exists() {
+            fs::create_dir(&artifacts_dir)?;
+        }
+
+        self.artifacts_dir = artifacts_dir.to_str().unwrap_or_default().to_string();
+        self.save_default()
     }
 
     pub fn load_or_init(path: &Path) -> io::Result<Self> {
