@@ -1,6 +1,6 @@
-use serde::{ Serialize, Deserialize };
-use std::fs::{ self, File };
-use std::io::{ self, Read, Write };
+use serde::{Deserialize, Serialize};
+use std::fs::{self, File};
+use std::io::{self, Read, Write};
 use std::path::Path;
 use std::path::PathBuf;
 
@@ -26,6 +26,10 @@ pub struct Settings {
     // WINDOWS ONLY - VCPKG CMAKE TOOLCHAIN
     pub cmake_system_type: String,
     pub cmake_build_type: String,
+    // Cross-compilation
+    pub cross_compile: bool,
+    pub cross_compile_target: String,
+    pub cross_compile_target_with_generator: String,
     // Cached commands
     pub last_cmake_configuration_command: Vec<String>,
     pub last_command: Vec<String>,
@@ -55,9 +59,9 @@ impl Settings {
             .unwrap_or_default();
 
         /*let working_dir = std::env
-            ::current_dir()?
-            .to_str()
-            .map(|s| s.to_string());*/
+        ::current_dir()?
+        .to_str()
+        .map(|s| s.to_string());*/
         Ok(Settings {
             os: std::env::consts::OS.to_string(),
             os_release: sys_info::os_type().unwrap_or_default(),
@@ -78,6 +82,10 @@ impl Settings {
             // WINDOWS ONLY - VCPKG CMAKE TOOLCHAIN
             cmake_system_type: "".to_string(),
             cmake_build_type: "".to_string(),
+            // Cross-compilation
+            cross_compile: false,
+            cross_compile_target: "".to_string(),
+            cross_compile_target_with_generator: "".to_string(),
             // Cached commands
             last_cmake_configuration_command: vec![],
             last_command: vec![],
@@ -128,16 +136,17 @@ impl Settings {
 
     pub fn get_settings_path() -> io::Result<PathBuf> {
         let exe_path = std::env::current_exe()?;
-        let dir = exe_path
-            .parent()
-            .ok_or(io::Error::new(io::ErrorKind::NotFound, "Executable directory not found"))?;
+        let dir = exe_path.parent().ok_or(io::Error::new(
+            io::ErrorKind::NotFound,
+            "Executable directory not found",
+        ))?;
         Ok(dir.join("settings.json"))
     }
 
     pub fn delete(path: &Path) -> io::Result<()> {
         match fs::remove_file(path) {
-            Ok(_) => { Ok(()) }
-            Err(e) => { Err(e) }
+            Ok(_) => Ok(()),
+            Err(e) => Err(e),
         }
     }
 
@@ -157,6 +166,11 @@ impl Settings {
             "vcpkg_path" => Some(self.vcpkg_path.clone()),
             "cmake_system_type" => Some(self.cmake_system_type.clone()),
             "cmake_build_type" => Some(self.cmake_build_type.clone()),
+            "cross_compile" => Some(self.cross_compile.to_string()),
+            "cross_compile_target" => Some(self.cross_compile_target.clone()),
+            "last_cmake_configuration_command" => {
+                Some(self.last_cmake_configuration_command.join(" ").to_string())
+            }
             // Cached commands are locked
             _ => None,
         }
@@ -206,6 +220,17 @@ impl Settings {
             "cmake_build_type" => {
                 self.cmake_build_type = value;
             }
+            // Cross-compilation
+            "cross_compile" => {
+                self.cross_compile = value.parse().unwrap_or(false);
+            }
+            "cross_compile_target" => {
+                self.cross_compile_target = value;
+            }
+            "last_cmake_configuration_command" => {
+                self.last_cmake_configuration_command =
+                    value.split_whitespace().map(|s| s.to_string()).collect();
+            }
             // Cached commands are locked
             _ => {
                 return Err("Key not found".to_string());
@@ -218,7 +243,7 @@ impl Settings {
 
     pub fn contains_key(&self, key: &str) -> bool {
         match key {
-            | "os"
+            "os"
             | "os_release"
             | "os_version"
             | "exe_path"
@@ -232,6 +257,9 @@ impl Settings {
             | "vcpkg_path"
             | "cmake_system_type"
             | "cmake_build_type"
+            | "cross_compile"
+            | "cross_compile_target"
+            | "cross_compile_target_with_generator"
             | "last_cmake_configuration_command"
             | "last_command"
             | "cmake_targets" => true,
