@@ -162,22 +162,23 @@ pub fn run(args: BuildArgs) {
         return;
     } else {
         info!("Cross-compilation not detected. Running default build process.");
+
+        check_build_type(&args);
+
+        let build_type = if args.debug_build_type {
+            info!("Build Type: Debug");
+            "Debug"
+        } else {
+            info!("Build Type: Release");
+            "Release"
+        };
+
+        cache_cmake_build_type(&mut settings, build_type);
+
         clean_cross_compile_target(&settings);
         export_crucial_variables_to_root_file(&settings);
 
         if let Some(maybe_generate_args) = &args.generate_project {
-            check_build_type(&args);
-
-            let build_type = if args.debug_build_type {
-                info!("Build Type: Debug");
-                "Debug"
-            } else {
-                info!("Build Type: Release");
-                "Release"
-            };
-
-            cache_cmake_build_type(&mut settings, build_type);
-
             // clean_cross_compile_target(&settings);
             // export_crucial_variables_to_root_file(&settings);
 
@@ -244,19 +245,6 @@ pub fn run(args: BuildArgs) {
         // }
 
         if args.build_project {
-            check_build_type(&args);
-
-            // Depending on build type set string variable as "Debug" or "Release"
-            let build_type = if args.debug_build_type {
-                info!("Build Type: Debug");
-                "Debug"
-            } else {
-                info!("Build Type: Release");
-                "Release"
-            };
-
-            cache_cmake_build_type(&mut settings, build_type);
-
             // clean_cross_compile_target(&settings);
             // export_crucial_variables_to_root_file(&settings);
 
@@ -266,17 +254,6 @@ pub fn run(args: BuildArgs) {
         }
 
         if args.install_project {
-            check_build_type(&args);
-
-            // Depending on build type set string variable as "Debug" or "Release"
-            let build_type = if args.debug_build_type {
-                info!("Build Type: Debug");
-                "Debug"
-            } else {
-                info!("Build Type: Release");
-                "Release"
-            };
-
             // clean_cross_compile_target(&settings);
             // export_crucial_variables_to_root_file(&settings);
 
