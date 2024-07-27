@@ -49,6 +49,9 @@ pub fn run(args: BuildArgs) {
         }
     };
 
+    // Make sure to init artifacts
+    let _ = settings.init_artifacts_dir();
+
     // If not initialized, throw an error
     if !settings.initialized {
         RuntimeErrors::ProjectNotInitialized.exit();
