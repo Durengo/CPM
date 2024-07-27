@@ -320,9 +320,14 @@ pub fn execute_and_return_output(cmd_array: Vec<String>) -> String {
     }
 }
 
+#[allow(dead_code)]
 pub fn execute_wsl_command_and_display_output_live(cmd_array: Vec<String>) {
     if cmd_array.is_empty() {
         RuntimeErrors::NoCommandsProvided.exit();
+    }
+
+    if cfg!(not(windows)) {
+        RuntimeErrors::NotSupportedOS(None).exit();
     }
 
     trace!("Executing WSL command: {}", cmd_array.join(" "));
@@ -385,6 +390,10 @@ pub fn execute_wsl_command_and_display_output_live(cmd_array: Vec<String>) {
 pub fn execute_wsl_command(cmd_array: Vec<String>) {
     if cmd_array.is_empty() {
         RuntimeErrors::NoCommandsProvided.exit();
+    }
+
+    if cfg!(not(windows)) {
+        RuntimeErrors::NotSupportedOS(None).exit();
     }
 
     trace!("Executing WSL command: {}", cmd_array.join(" "));
