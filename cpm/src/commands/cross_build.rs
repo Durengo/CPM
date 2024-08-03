@@ -404,13 +404,13 @@ fn generate_preset_for_cross_compilation(
                 ),
                 // Target system linker
                 format!(
-                    "-DCMAKE_LINKER=/usr/bin/{}-gnu-ld",
-                    settings.cross_compile_compiler.to_string(),
+                    "-DCMAKE_SYSROOT={}",
+                    settings.cross_compile_sysroot.to_string(),
                 ),
                 // Target system linker
                 format!(
-                    "-DCMAKE_AR=/usr/bin/{}-gnu-ar",
-                    settings.cross_compile_compiler.to_string(),
+                    "-DCMAKE_FIND_ROOT_PATH={}",
+                    settings.cross_compile_sysroot.to_string(),
                 ),
                 // Target system linker flags
                 "-DCMAKE_FIND_ROOT_PATH_MODE_PROGRAM=NEVER".to_string(),
