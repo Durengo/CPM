@@ -114,6 +114,8 @@ pub fn run(args: CrossBuildArgs) {
     cache_cmake_build_type(&mut settings, build_type);
 
     if let Some(maybe_generate_args) = &args.generate_project {
+        generate_cmake_codemodel_v2(&settings);
+
         match maybe_generate_args {
             Some(generate_args) if !generate_args.trim().is_empty() => {
                 info!(
