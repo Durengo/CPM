@@ -113,9 +113,9 @@ pub fn run(args: CrossBuildArgs) {
 
     cache_cmake_build_type(&mut settings, build_type);
 
-    if let Some(maybe_generate_args) = &args.generate_project {
-        generate_cmake_codemodel_v2(&settings);
+    generate_cmake_codemodel_v2(&settings);
 
+    if let Some(maybe_generate_args) = &args.generate_project {
         match maybe_generate_args {
             Some(generate_args) if !generate_args.trim().is_empty() => {
                 info!(
@@ -158,7 +158,7 @@ pub fn run(args: CrossBuildArgs) {
 
         export_crucial_variables_to_root_file(&settings);
 
-        generate_cmake_codemodel_v2(&settings);
+        // generate_cmake_codemodel_v2(&settings);
 
         build_cmake_project_cross_compilation(&settings, build_type);
 
@@ -179,7 +179,7 @@ pub fn run(args: CrossBuildArgs) {
 
         export_crucial_variables_to_root_file(&settings);
 
-        generate_cmake_codemodel_v2(&settings);
+        // generate_cmake_codemodel_v2(&settings);
 
         install_cmake_project(&settings, build_type);
 
@@ -312,7 +312,7 @@ fn generate_cmake_project_cross_compilation(
 
     export_crucial_variables_to_root_file(&settings);
 
-    generate_cmake_codemodel_v2(&settings);
+    // generate_cmake_codemodel_v2(&settings);
 
     let cross_compile_target_with_generator = settings.cross_compile_target_with_generator.clone();
 
