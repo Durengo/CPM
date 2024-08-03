@@ -3,7 +3,7 @@ use std::fs;
 use std::path::Path;
 use walkdir::WalkDir;
 
-use crate::commands::BuildArgs;
+use crate::commands::CrossBuildArgs;
 use crate::errors::errors::RuntimeErrors;
 use crate::internal::cmd;
 use crate::internal::codemodel_v2::{
@@ -26,7 +26,7 @@ const INSTALL_DIR_NAME: &str = "install";
 #[cfg(target_os = "macos")]
 const INSTALL_DIR_NAME: &str = "install";
 
-pub fn run(args: BuildArgs) {
+pub fn run(args: CrossBuildArgs) {
     debug!(
         "Running the Initialization command with arguments: {:#?}",
         args
@@ -76,7 +76,30 @@ pub fn run(args: BuildArgs) {
         }
     }
 
-    info!("Cross-compilation not detected. Running default build process.");
+    settings.cross_compile = true;
+    let _ = settings.save_default();
+
+    if args.processor.is_some() {
+        let processor = args.processor.clone().unwrap();
+        info!("Processor set: {}", processor);
+
+        // Currently from here we can also set the compiler
+        // i.e. "{processor}-linux" for aarch64
+        let compiler = format!("{}-linux", processor);
+
+        settings.cross_compile_processor = processor;
+        settings.cross_compile_compiler = compiler;
+        let _ = settings.save_default();
+    }
+
+    if args.sysroot.is_some() {
+        let sysroot = args.sysroot.clone().unwrap();
+        info!("Sysroot path set: {}", sysroot);
+        settings.cross_compile_sysroot = sysroot;
+        let _ = settings.save_default();
+    }
+
+    info!("Cross-compilation detected. Running cross-compilation build process.");
 
     check_build_type(&args);
 
@@ -90,28 +113,25 @@ pub fn run(args: BuildArgs) {
 
     cache_cmake_build_type(&mut settings, build_type);
 
-    clean_cross_compile_target(&settings);
     export_crucial_variables_to_root_file(&settings);
 
+    generate_cmake_codemodel_v2(&settings);
+
     if let Some(maybe_generate_args) = &args.generate_project {
-        // clean_cross_compile_target(&settings);
-        // export_crucial_variables_to_root_file(&settings);
-
-        generate_cmake_codemodel_v2(&settings);
-
         match maybe_generate_args {
             Some(generate_args) if !generate_args.trim().is_empty() => {
                 info!(
                     "Generating CMake project for system type '{}' with build type '{}'",
                     generate_args, build_type
                 );
-                generate_cmake_project(&mut settings, generate_args, build_type);
+
+                generate_cmake_project_cross_compilation(&mut settings, generate_args, build_type);
             }
             _ => {
                 warn!(
                         "No system type provided or empty. Will attempt to use the last cmake configuration command."
                     );
-                let last_cmd = &settings.last_cmake_configuration_command;
+                let last_cmd = &settings.last_cmake_configuration_command_cross_compile;
                 if !last_cmd.is_empty() {
                     cmd::execute_and_display_output_live(last_cmd.clone());
                 } else {
@@ -121,61 +141,48 @@ pub fn run(args: BuildArgs) {
         }
 
         cache_cmake_targets(&mut settings);
-
-        // if generate_args.trim().is_empty() {
-        //     warn!("No system type provided. Will attempt to use last cmake configuration command.");
-
-        //     let last_cmd = &settings.last_cmake_configuration_command;
-
-        //     cmd::execute_and_display_output(last_cmd.clone());
-        // } else {
-        //     info!(
-        //         "Generating CMake project for system type '{}' with build type '{}'",
-        //         generate_args,
-        //         build_type
-        //     );
-        //     generate_cmake_project(&mut settings, &generate_args, &build_type);
-        // }
-
         info!("Project generated successfully.");
     }
-    // else if !args.generate_project.is_empty() {
-    //     check_build_type(&args);
-
-    //     let build_type = if args.debug_build_type {
-    //         info!("Build Type: Debug");
-    //         "Debug"
-    //     } else {
-    //         info!("Build Type: Release");
-    //         "Release"
-    //     };
-
-    //     warn!("No system type provided. Will attempt to use last cmake configuration command.");
-
-    //     let last_cmd = &settings.last_cmake_configuration_command;
-
-    //     cmd::execute_and_display_output(last_cmd.clone());
-
-    //     info!("Project generated successfully.");
-    // }
 
     if args.build_project {
-        // clean_cross_compile_target(&settings);
-        // export_crucial_variables_to_root_file(&settings);
+        check_build_type(&args);
 
-        build_cmake_project(&settings, build_type);
+        // Depending on build type set string variable as "Debug" or "Release"
+        let build_type = if args.debug_build_type {
+            info!("Build Type: Debug");
+            "Debug"
+        } else {
+            info!("Build Type: Release");
+            "Release"
+        };
+
+        cache_cmake_build_type(&mut settings, build_type);
+
+        build_cmake_project_cross_compilation(&settings, build_type);
 
         info!("Project built successfully.");
     }
 
     if args.install_project {
-        // clean_cross_compile_target(&settings);
-        // export_crucial_variables_to_root_file(&settings);
+        check_build_type(&args);
+
+        // Depending on build type set string variable as "Debug" or "Release"
+        let build_type = if args.debug_build_type {
+            info!("Build Type: Debug");
+            "Debug"
+        } else {
+            info!("Build Type: Release");
+            "Release"
+        };
 
         install_cmake_project(&settings, build_type);
 
         info!("Project installed successfully.");
     }
+
+    // Turn this off after we are done with cross-compilation
+    settings.cross_compile = false;
+    let _ = settings.save_default();
 
     if args.source_targets {
         cache_cmake_targets(&mut settings);
@@ -220,47 +227,11 @@ fn cache_cmake_targets(settings: &mut Settings) {
                             // info!("Found CMake API response: {:#?}", response);
                             // Depending on the compiler and build system we need to capture targets differently
 
-                            // NT/MSVC
-                            if settings.cmake_system_type == "nt/msvc" {
-                                // Filter configurations by the current build type
+                            // RPI4/UMake
+                            if settings.cmake_system_type == "rpi4/umake" {
                                 response
                                     .configurations
                                     .iter()
-                                    .filter(|config| config.name == settings.cmake_build_type)
-                                    .flat_map(|config| &config.targets)
-                                    .for_each(|target| {
-                                        // info!(
-                                        //     "Found target for {} build: {}",
-                                        //     settings.cmake_build_type, target.name
-                                        // );
-                                        targets.push(target.name.clone());
-                                    });
-                            }
-                            // UNIX/Clang or UNIX/GCC
-                            else if settings.cmake_system_type == "unix/clang"
-                                || settings.cmake_system_type == "unix/gcc"
-                            {
-                                // Ignore the build type and just grab all targets as in unix codemodel is different
-                                response
-                                    .configurations
-                                    .iter()
-                                    .flat_map(|config| &config.targets)
-                                    .for_each(|target| {
-                                        // info!(
-                                        //     "Found target for {} build: {}",
-                                        //     settings.cmake_build_type, target.name
-                                        // );
-                                        targets.push(target.name.clone());
-                                    });
-                            }
-                            // OSX/Clang
-                            else if settings.cmake_system_type == "make/clang"
-                                || settings.cmake_system_type == "make/gcc"
-                            {
-                                response
-                                    .configurations
-                                    .iter()
-                                    .filter(|config| config.name == settings.cmake_build_type)
                                     .flat_map(|config| &config.targets)
                                     .for_each(|target| {
                                         // info!(
@@ -288,7 +259,7 @@ fn cache_cmake_targets(settings: &mut Settings) {
     let _ = settings.save_default();
 }
 
-fn check_build_type(args: &BuildArgs) {
+fn check_build_type(args: &CrossBuildArgs) {
     // If none are set, throw an error
     if !(args.debug_build_type || args.release_build_type) {
         error!("Build type not set. Pass the appropriate flag (-r or -d).");
@@ -301,158 +272,13 @@ fn check_build_type(args: &BuildArgs) {
     }
 }
 
-fn generate_cmake_project(settings: &mut Settings, system_type: &str, build_type: &str) {
-    let source_dir = settings.working_dir.clone();
+#[allow(unreachable_code)]
+#[allow(unused_variables)]
+fn build_cmake_project_cross_compilation(settings: &Settings, build_type: &str) {
     let build_dir = settings.build_dir.clone();
-    let toolchain_path = settings.vcpkg_path.clone();
-
-    // Throw error if building msvc for non-windows
-    if system_type == "nt/msvc" && !cfg!(target_os = "windows") {
-        error!("Cannot build for 'nt/msvc' on a non-Windows system.");
-        RuntimeErrors::GenerateProjectNtMsvcNonWindows.exit();
-    }
-
-    // If system_type is "nt/msvc", then the toolchain path must be set.
-    if system_type == "nt/msvc" && toolchain_path.is_empty() {
-        error!(
-            "Please set the toolchain (VCPKG) path for system type 'nt/msvc', using 'setup --toolchain <path>' or 'setup -a'."
-        );
-        RuntimeErrors::GenerateProjectNtMsvcNoToolchain.exit();
-    }
-
-    // Add .VCPKG_TOOLCHAIN_PATH and .VCPKG_ROOT_PATH to artifact directory
-    if system_type == "nt/msvc" {
-        let artifacts = Path::new(&settings.working_dir).join("Artifacts");
-        {
-            let vcpkg_path_file = artifacts.join(".VCPKG_TOOLCHAIN_PATH");
-
-            // Write the VCPKG toolchain file path to the file
-            match std::fs::write(&vcpkg_path_file, &settings.vcpkg_path) {
-                Ok(_) => {
-                    info!(
-                        "Successfully wrote VCPKG path to file: {}",
-                        vcpkg_path_file.display()
-                    );
-                }
-                Err(e) => {
-                    error!("Failed to write VCPKG path to file: {}", e);
-                }
-            }
-        }
-        {
-            let vcpkg_root_path_file = artifacts.join(".VCPKG_ROOT_PATH");
-
-            // Write the VCPKG path to the file
-            match std::fs::write(&vcpkg_root_path_file, &settings.toolchain_path) {
-                Ok(_) => {
-                    info!(
-                        "Successfully wrote VCPKG root path to file: {}",
-                        vcpkg_root_path_file.display()
-                    );
-                }
-                Err(e) => {
-                    error!("Failed to write VCPKG root path to file: {}", e);
-                }
-            }
-        }
-    }
-
-    // Prepare the presets
-    // Match system type string
-    let preset = generate_preset(&system_type, &source_dir, &build_dir, &toolchain_path);
-
-    // Cache system and build type and the last command.
-    settings.cmake_system_type = system_type.to_string();
-    settings.cmake_build_type = build_type.to_string();
-    settings.last_cmake_configuration_command = preset.clone();
-    let _ = settings.save_default();
-
-    cmd::execute_and_display_output_live(preset);
-
-    debug!("Settings: {:#?}", settings);
-}
-
-fn generate_preset(
-    system_type: &str,
-    source_dir: &str,
-    build_dir: &str,
-    toolchain_path: &str,
-) -> Vec<String> {
-    match system_type {
-        "nt/msvc" => {
-            vec![
-                "cmake".to_string(),
-                "-S".to_string(),
-                source_dir.to_string(),
-                "-B".to_string(),
-                build_dir.to_string(),
-                "-G".to_string(),
-                "Visual Studio 17 2022".to_string(),
-                format!("-DCMAKE_TOOLCHAIN_FILE={}", toolchain_path),
-            ]
-        }
-        "unix/clang" => {
-            vec![
-                "cmake".to_string(),
-                "-S".to_string(),
-                source_dir.to_string(),
-                "-B".to_string(),
-                build_dir.to_string(),
-                "-G".to_string(),
-                "Ninja".to_string(),
-                "-DCMAKE_C_COMPILER=clang".to_string(),
-                "-DCMAKE_CXX_COMPILER=clang++".to_string(),
-            ]
-        }
-        "unix/gcc" => {
-            vec![
-                "cmake".to_string(),
-                "-S".to_string(),
-                source_dir.to_string(),
-                "-B".to_string(),
-                build_dir.to_string(),
-                "-G".to_string(),
-                "Ninja".to_string(),
-                "-DCMAKE_C_COMPILER=gcc".to_string(),
-                "-DCMAKE_CXX_COMPILER=g++".to_string(),
-            ]
-        }
-        "make/clang" => {
-            vec![
-                "cmake".to_string(),
-                "-S".to_string(),
-                source_dir.to_string(),
-                "-B".to_string(),
-                build_dir.to_string(),
-                "-G".to_string(),
-                "Unix Makefiles".to_string(),
-                "-DCMAKE_C_COMPILER=clang".to_string(),
-                "-DCMAKE_CXX_COMPILER=clang++".to_string(),
-            ]
-        }
-        "make/gcc" => {
-            vec![
-                "cmake".to_string(),
-                "-S".to_string(),
-                source_dir.to_string(),
-                "-B".to_string(),
-                build_dir.to_string(),
-                "-G".to_string(),
-                "Unix Makefiles".to_string(),
-                "-DCMAKE_C_COMPILER=gcc".to_string(),
-                "-DCMAKE_CXX_COMPILER=g++".to_string(),
-            ]
-        }
-        _ => {
-            error!("Invalid system type: {}", system_type);
-            RuntimeErrors::GenerateProjectInvalidSystemType(Some(system_type.to_string())).exit();
-            vec![]
-        }
-    }
-}
-
-fn build_cmake_project(settings: &Settings, build_type: &str) {
-    let build_dir = settings.build_dir.clone();
+    // let source_dir_wsl = cmd::convert_to_wsl_path(source_dir);
+    // let build_dir_wsl = cmd::convert_to_wsl_path(&build_dir);
+    // we should provide UNIX paths here
 
     cmd::execute_and_display_output_live(vec![
         "cmake".to_string(),
@@ -461,6 +287,150 @@ fn build_cmake_project(settings: &Settings, build_type: &str) {
         "--config".to_string(),
         build_type.to_string(),
     ]);
+}
+
+fn generate_cmake_project_cross_compilation(
+    settings: &mut Settings,
+    system_type: &str,
+    build_type: &str,
+) {
+    let source_dir = settings.working_dir.clone();
+    let build_dir = settings.build_dir.clone();
+
+    // In settings set cross_compile to true
+    settings.cross_compile_target_with_generator = system_type.to_string();
+    // This is the format target/generator, so we need to take everything before the '/'
+    settings.cross_compile_target = system_type.split('/').collect::<Vec<&str>>()[0].to_string();
+
+    let _ = settings.save_default();
+
+    let cross_compile_target_with_generator = settings.cross_compile_target_with_generator.clone();
+
+    // Check if processor and sysroot path are set
+    if settings.cross_compile_processor.is_empty() {
+        error!(
+            "Cross-compile processor set. Please use the 'processor' command to set the processor."
+        );
+        RuntimeErrors::CrossCompilationProcessorNotSet(
+            cross_compile_target_with_generator.to_string(),
+        )
+        .exit();
+    }
+    if settings.cross_compile_compiler.is_empty() {
+        error!(
+            "Cross-compile compiler set. Please use the 'compiler' command to set the compiler."
+        );
+        RuntimeErrors::CrossCompilationCompilerNotSet(
+            cross_compile_target_with_generator.to_string(),
+        )
+        .exit();
+    }
+    if settings.cross_compile_sysroot.is_empty() {
+        error!("Cross-compile sysroot set. Please use the 'sysroot' command to set the sysroot.");
+        RuntimeErrors::CrossCompilationSysrootPathNotSet(
+            cross_compile_target_with_generator.to_string(),
+        )
+        .exit();
+    }
+
+    // Prepare the presets
+    // Match system type string
+    let preset = generate_preset_for_cross_compilation(
+        &cross_compile_target_with_generator,
+        &source_dir,
+        &build_dir,
+        settings,
+    );
+
+    debug!("Preset: {:#?}", preset);
+
+    // Cache system and build type and the last command.
+    settings.cmake_system_type = cross_compile_target_with_generator.to_string();
+    settings.cmake_build_type = build_type.to_string();
+    settings.last_cmake_configuration_command_cross_compile = preset.clone();
+    let _ = settings.save_default();
+
+    // cmd::execute_and_display_output_live(preset);
+    // cmd::execute_wsl_command(preset);
+    cmd::execute_and_display_output_live(preset.clone());
+
+    debug!("Settings: {:#?}", settings);
+}
+
+// Generate preset for cross compilation targets
+fn generate_preset_for_cross_compilation(
+    cross_compile_target_with_generator: &str,
+    source_dir: &str,
+    build_dir: &str,
+    settings: &mut Settings,
+) -> Vec<String> {
+    // These paths do not need to be converted if we are operating in WSL
+    // let source_dir_wsl = cmd::convert_to_wsl_path(source_dir);
+    // let build_dir_wsl = cmd::convert_to_wsl_path(build_dir);
+    // let source_dir = settings.working_dir.clone();
+    // let build_dir = settings.build_dir.clone();
+
+    match cross_compile_target_with_generator {
+        "rpi4/umake" => {
+            vec![
+                "cmake".to_string(),
+                // Code source
+                "-S".to_string(),
+                format!("{}", source_dir),
+                // Build destination
+                "-B".to_string(),
+                format!("{}", build_dir),
+                // Generator
+                "-G".to_string(),
+                "Unix Makefiles".to_string(),
+                // Target system type
+                "-DCMAKE_SYSTEM_NAME=Linux".to_string(),
+                // Target system version
+                "-DCMAKE_SYSTEM_VERSION=1".to_string(),
+                // Target system processor
+                format!(
+                    "-DCMAKE_SYSTEM_PROCESSOR={}",
+                    settings.cross_compile_processor.to_string()
+                ),
+                // Target system C compiler
+                format!(
+                    "-DCMAKE_C_COMPILER=/usr/bin/{}-gnu-gcc",
+                    settings.cross_compile_compiler.to_string(),
+                ),
+                // Target system C++ compiler
+                format!(
+                    "-DCMAKE_CXX_COMPILER=/usr/bin/{}-gnu-g++",
+                    settings.cross_compile_compiler.to_string(),
+                ),
+                // Target system linker
+                format!(
+                    "-DCMAKE_LINKER=/usr/bin/{}-gnu-ld",
+                    settings.cross_compile_compiler.to_string(),
+                ),
+                // Target system linker
+                format!(
+                    "-DCMAKE_AR=/usr/bin/{}-gnu-ar",
+                    settings.cross_compile_compiler.to_string(),
+                ),
+                // Target system linker flags
+                "-DCMAKE_FIND_ROOT_PATH_MODE_PROGRAM=NEVER".to_string(),
+                "-DCMAKE_FIND_ROOT_PATH_MODE_LIBRARY=ONLY".to_string(),
+                "-DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE=ONLY".to_string(),
+                "-DCMAKE_FIND_ROOT_PATH_MODE_PACKAGE=ONLY".to_string(),
+            ]
+        }
+        _ => {
+            error!(
+                "Invalid cross compilation target: {}",
+                cross_compile_target_with_generator
+            );
+            RuntimeErrors::CrossCompilationGenerateProjectInvalidTarget(
+                cross_compile_target_with_generator.to_string(),
+            )
+            .exit();
+            vec![]
+        }
+    }
 }
 
 fn install_cmake_project(settings: &Settings, build_type: &str) {
@@ -588,6 +558,7 @@ fn export_crucial_variables_to_root_file(settings: &Settings) {
 }
 
 // Clean up .CROSS_COMPILE_TARGET
+#[allow(dead_code)]
 fn clean_cross_compile_target(settings: &Settings) {
     let artifacts = Path::new(&settings.working_dir).join("Artifacts");
     let cross_compile_target_file = artifacts.join(".CROSS_COMPILE_TARGET");

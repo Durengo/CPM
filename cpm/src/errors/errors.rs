@@ -32,6 +32,9 @@ pub enum RuntimeErrors {
     GenerateProjectNtMsvcNonWindows,
     // Cross compilation related errors 51-60
     CrossCompilationGenerateProjectInvalidTarget(String),
+    CrossCompilationProcessorNotSet(String),
+    CrossCompilationCompilerNotSet(String),
+    CrossCompilationSysrootPathNotSet(String),
     // Not implemented 1000-1005
     NotImplemented,
 }
@@ -69,6 +72,9 @@ impl RuntimeErrors {
             RuntimeErrors::GenerateProjectNtMsvcNonWindows => 49,
             // Cross compilation related errors 51-60
             RuntimeErrors::CrossCompilationGenerateProjectInvalidTarget(_) => 51,
+            RuntimeErrors::CrossCompilationProcessorNotSet(_) => 52,
+            RuntimeErrors::CrossCompilationCompilerNotSet(_) => 53,
+            RuntimeErrors::CrossCompilationSysrootPathNotSet(_) => 54,
             // Not implemented 1000-1005
             RuntimeErrors::NotImplemented => 1000,
         }
@@ -278,6 +284,27 @@ impl RuntimeErrors {
             RuntimeErrors::CrossCompilationGenerateProjectInvalidTarget(target) => {
                 format!(
                     "|Error {}| The cross-compilation target '{}' is invalid",
+                    self.error_code(),
+                    target
+                )
+            }
+            RuntimeErrors::CrossCompilationProcessorNotSet(target) => {
+                format!(
+                    "|Error {}| The processor for the target '{}' was not set",
+                    self.error_code(),
+                    target
+                )
+            }
+            RuntimeErrors::CrossCompilationCompilerNotSet(target) => {
+                format!(
+                    "|Error {}| The compiler for the target '{}' was not set",
+                    self.error_code(),
+                    target
+                )
+            }
+            RuntimeErrors::CrossCompilationSysrootPathNotSet(target) => {
+                format!(
+                    "|Error {}| The sysroot path for the target '{}' was not set",
                     self.error_code(),
                     target
                 )

@@ -330,7 +330,7 @@ pub fn execute_wsl_command_and_display_output_live(cmd_array: Vec<String>) {
         RuntimeErrors::NotSupportedOS(None).exit();
     }
 
-    trace!("Executing WSL command: {}", cmd_array.join(" "));
+    trace!("Executing WSL command:\n{}", cmd_array.join(" "));
 
     let (command, args) = cmd_array.split_first().unwrap();
 
@@ -387,6 +387,7 @@ pub fn execute_wsl_command_and_display_output_live(cmd_array: Vec<String>) {
     }
 }
 
+#[allow(dead_code)]
 pub fn execute_wsl_command(cmd_array: Vec<String>) {
     if cmd_array.is_empty() {
         RuntimeErrors::NoCommandsProvided.exit();
@@ -396,7 +397,7 @@ pub fn execute_wsl_command(cmd_array: Vec<String>) {
         RuntimeErrors::NotSupportedOS(None).exit();
     }
 
-    trace!("Executing WSL command: {}", cmd_array.join(" "));
+    trace!("Executing WSL command:\n{}", cmd_array.join(" "));
 
     let (command, args) = cmd_array.split_first().unwrap();
 
@@ -425,6 +426,7 @@ pub fn execute_wsl_command(cmd_array: Vec<String>) {
     }
 }
 
+#[allow(dead_code)]
 pub fn convert_to_wsl_path(windows_path: &str) -> String {
     // Check if the path is valid and contains a drive letter
     if windows_path.len() < 2 || &windows_path[1..2] != ":" {

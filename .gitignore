@@ -9,3 +9,9 @@ cpm/test/manual/*
 !cpm/test/manual/CMakelists.txt
 !cpm/test/manual/main.cpp
 !cpm/test/manual/QUICK.md
+
+# cross-compilation
+cpm/test/cross/*
+!cpm/test/cross/CMakelists.txt
+!cpm/test/cross/main.cpp
+!cpm/test/cross/QUICK.md

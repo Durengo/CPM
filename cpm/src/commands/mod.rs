@@ -2,6 +2,7 @@ use clap::Parser;
 
 pub mod build;
 pub mod cache;
+pub mod cross_build;
 pub mod init;
 pub mod setup;
 
@@ -13,6 +14,8 @@ pub enum Commands {
     Setup(SetupArgs),
     /// Build CPM in the current directory
     Build(BuildArgs),
+    /// Cross-compile CPM in the current directory
+    CrossBuild(CrossBuildArgs),
     /// Manage CPM Cache
     Cache(CacheArgs),
 }
@@ -126,19 +129,81 @@ pub struct BuildArgs {
     /// Source targets from CMake. Project must be generated first, otherwise it will fail.
     #[clap(required = false, long, short, action = clap::ArgAction::SetTrue, verbatim_doc_comment)]
     pub source_targets: bool,
+}
 
-    /// Cross-compile the project. Must be set to the specific target
-    /// Cross-compilation targets:
-    /// Raspberry Pi:
-    ///     pi4/umake ---> Raspberry Pi 4
+#[derive(Parser, Debug)]
+pub struct CrossBuildArgs {
+    /// Sets Build Type to Debug.
+    /// Must be set to either Debug or Release. Required shorthand for other commands.
+    /// Build types:
+    /// (Must mirror project-generate build types)
+    ///     Debug       ---> Debug build
+    ///     Release     ---> Release build
+    #[clap(required = false, long, short, action = clap::ArgAction::SetTrue, verbatim_doc_comment)]
+    pub debug_build_type: bool,
+
+    /// Sets Build Type to Release.
+    /// Must be set to either Debug or Release. Required shorthand for other commands.
+    /// Build types:
+    /// (Must mirror project-generate build types)
+    ///     Debug       ---> Debug build
+    ///     Release     ---> Release build
+    #[clap(required = false, long, short, action = clap::ArgAction::SetTrue, verbatim_doc_comment)]
+    pub release_build_type: bool,
+
+    /// Generate CMake Project. Will not run without a build type set flag.
+    /// Also, must provide cross-compile processor and sysroot path options.
+    /// System types:
+    ///     rpi4/umake  ---> Raspberry Pi 4
+    ///     NONE        ---> No system type. Uses last cached generate command.
     #[clap(
         required = false,
         long,
-        num_args(1),
-        value_names = &["CROSS-COMPILE-TARGET"],
+        short,
+        value_names = &["SYSTEM_TYPE"],
+        action = clap::ArgAction::Set,
         verbatim_doc_comment
     )]
-    pub cross_compile: Option<String>,
+    pub generate_project: Option<Option<String>>,
+
+    /// Build CMake Project. Automatically uses CMAKE_BUILD_TYPE. Will not run without a build type set flag.
+    #[clap(required = false, long, short, action = clap::ArgAction::SetTrue, verbatim_doc_comment)]
+    pub build_project: bool,
+
+    /// Install CMake Project. Automatically uses CMAKE_BUILD_TYPE. Will not run without a build type set flag.
+    #[clap(required = false, long, short, action = clap::ArgAction::SetTrue, verbatim_doc_comment)]
+    pub install_project: bool,
+
+    /// Clean CMake Project
+    /// WHAT_TO_CLEAN:
+    /// (Combine characters to clean multiple things)
+    ///     b   ---> Build directory
+    ///     i   ---> Install directory
+    #[clap(
+        required = false,
+        long,
+        short,
+        action = clap::ArgAction::Set,
+        value_names = &["WHAT_TO_CLEAN"],
+        verbatim_doc_comment
+    )]
+    pub clean_project: Option<Option<String>>,
+
+    /// Source targets from CMake. Project must be generated first, otherwise it will fail.
+    #[clap(required = false, long, short, action = clap::ArgAction::SetTrue, verbatim_doc_comment)]
+    pub source_targets: bool,
+
+    /// Processor to cross-compile for. Required for cross-compiling.
+    /// Example:
+    /// aarch64
+    #[clap(required = false, long, num_args(1), value_names = &["PROCESSOR"], verbatim_doc_comment)]
+    pub processor: Option<String>,
+
+    /// Sysroot path for cross-compiling. Required for cross-compiling.
+    /// Example:
+    /// /opt/rpi-sysroot
+    #[clap(required = false, long, num_args(1), value_names = &["SYSROOT_PATH"], verbatim_doc_comment)]
+    pub sysroot: Option<String>,
 }
 
 #[derive(Parser, Debug)]

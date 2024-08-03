@@ -31,8 +31,12 @@ pub struct Settings {
     pub cross_compile: bool,
     pub cross_compile_target: String,
     pub cross_compile_target_with_generator: String,
+    pub cross_compile_processor: String,
+    pub cross_compile_compiler: String,
+    pub cross_compile_sysroot: String,
     // Cached commands
     pub last_cmake_configuration_command: Vec<String>,
+    pub last_cmake_configuration_command_cross_compile: Vec<String>,
     pub last_command: Vec<String>,
     // Cached targets
     pub cmake_targets: Vec<String>,
@@ -89,8 +93,12 @@ impl Settings {
             cross_compile: false,
             cross_compile_target: "".to_string(),
             cross_compile_target_with_generator: "".to_string(),
+            cross_compile_processor: "".to_string(),
+            cross_compile_compiler: "".to_string(),
+            cross_compile_sysroot: "".to_string(),
             // Cached commands
             last_cmake_configuration_command: vec![],
+            last_cmake_configuration_command_cross_compile: vec![],
             last_command: vec![],
             // Cached targets
             cmake_targets: vec![],
@@ -191,9 +199,17 @@ impl Settings {
             "cross_compile_target_with_generator" => {
                 Some(self.cross_compile_target_with_generator.clone())
             }
+            "cross_compile_processor" => Some(self.cross_compile_processor.clone()),
+            "cross_compile_compiler" => Some(self.cross_compile_compiler.clone()),
+            "cross_compile_sysroot" => Some(self.cross_compile_sysroot.clone()),
             "last_cmake_configuration_command" => {
                 Some(self.last_cmake_configuration_command.join(" ").to_string())
             }
+            "last_cmake_configuration_command_cross_compile" => Some(
+                self.last_cmake_configuration_command_cross_compile
+                    .join(" ")
+                    .to_string(),
+            ),
             "last_command" => Some(self.last_command.join(" ").to_string()),
             "cmake_targets" => Some(self.cmake_targets.join(" ").to_string()),
             _ => None,
@@ -254,8 +270,21 @@ impl Settings {
             "cross_compile_target_with_generator" => {
                 self.cross_compile_target_with_generator = value;
             }
+            "cross_compile_processor" => {
+                self.cross_compile_processor = value;
+            }
+            "cross_compile_compiler" => {
+                self.cross_compile_compiler = value;
+            }
+            "cross_compile_sysroot" => {
+                self.cross_compile_sysroot = value;
+            }
             "last_cmake_configuration_command" => {
                 self.last_cmake_configuration_command =
+                    value.split_whitespace().map(|s| s.to_string()).collect();
+            }
+            "last_cmake_configuration_command_cross_compile" => {
+                self.last_cmake_configuration_command_cross_compile =
                     value.split_whitespace().map(|s| s.to_string()).collect();
             }
             "last_command" => {
@@ -295,7 +324,11 @@ impl Settings {
             | "cross_compile"
             | "cross_compile_target"
             | "cross_compile_target_with_generator"
+            | "cross_compile_processor"
+            | "cross_compile_compiler"
+            | "cross_compile_sysroot"
             | "last_cmake_configuration_command"
+            | "last_cmake_configuration_command_cross_compile"
             | "last_command"
             | "cmake_targets"
             | "artifacts_dir" => true,
