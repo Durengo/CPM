@@ -113,10 +113,6 @@ pub fn run(args: CrossBuildArgs) {
 
     cache_cmake_build_type(&mut settings, build_type);
 
-    export_crucial_variables_to_root_file(&settings);
-
-    generate_cmake_codemodel_v2(&settings);
-
     if let Some(maybe_generate_args) = &args.generate_project {
         match maybe_generate_args {
             Some(generate_args) if !generate_args.trim().is_empty() => {
@@ -303,6 +299,10 @@ fn generate_cmake_project_cross_compilation(
     settings.cross_compile_target = system_type.split('/').collect::<Vec<&str>>()[0].to_string();
 
     let _ = settings.save_default();
+
+    export_crucial_variables_to_root_file(&settings);
+
+    generate_cmake_codemodel_v2(&settings);
 
     let cross_compile_target_with_generator = settings.cross_compile_target_with_generator.clone();
 
