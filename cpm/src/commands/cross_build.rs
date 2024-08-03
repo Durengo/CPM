@@ -154,6 +154,10 @@ pub fn run(args: CrossBuildArgs) {
 
         cache_cmake_build_type(&mut settings, build_type);
 
+        export_crucial_variables_to_root_file(&settings);
+
+        generate_cmake_codemodel_v2(&settings);
+
         build_cmake_project_cross_compilation(&settings, build_type);
 
         info!("Project built successfully.");
@@ -170,6 +174,10 @@ pub fn run(args: CrossBuildArgs) {
             info!("Build Type: Release");
             "Release"
         };
+
+        export_crucial_variables_to_root_file(&settings);
+
+        generate_cmake_codemodel_v2(&settings);
 
         install_cmake_project(&settings, build_type);
 
