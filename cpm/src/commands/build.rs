@@ -15,16 +15,16 @@ use crate::internal::settings::Settings;
 #[cfg(target_os = "windows")]
 const BUILD_DIR_NAME: &str = "Build";
 #[cfg(target_os = "linux")]
-const BUILD_DIR_NAME: &str = "build";
+const BUILD_DIR_NAME: &str = "Build";
 #[cfg(target_os = "macos")]
-const BUILD_DIR_NAME: &str = "build";
+const BUILD_DIR_NAME: &str = "Build";
 
 #[cfg(target_os = "windows")]
 const INSTALL_DIR_NAME: &str = "Install";
 #[cfg(target_os = "linux")]
-const INSTALL_DIR_NAME: &str = "install";
+const INSTALL_DIR_NAME: &str = "Install";
 #[cfg(target_os = "macos")]
-const INSTALL_DIR_NAME: &str = "install";
+const INSTALL_DIR_NAME: &str = "Install";
 
 pub fn run(args: BuildArgs) {
     debug!(
@@ -270,6 +270,21 @@ fn cache_cmake_targets(settings: &mut Settings) {
                                         targets.push(target.name.clone());
                                     });
                             }
+                            // OSX/Xcode/Clang
+                            else if settings.cmake_system_type == "xcode" {
+                                response
+                                    .configurations
+                                    .iter()
+                                    .filter(|config| config.name == settings.cmake_build_type)
+                                    .flat_map(|config| &config.targets)
+                                    .for_each(|target| {
+                                        info!(
+                                            "Found target for {} build: {}",
+                                            settings.cmake_build_type, target.name
+                                        );
+                                        targets.push(target.name.clone());
+                                    });
+                            }
                         }
                         Err(e) => error!("Failed to parse JSON: {}", e),
                     }
@@ -441,6 +456,19 @@ fn generate_preset(
                 "Unix Makefiles".to_string(),
                 "-DCMAKE_C_COMPILER=gcc".to_string(),
                 "-DCMAKE_CXX_COMPILER=g++".to_string(),
+            ]
+        }
+        "xcode" => {
+            vec![
+                "cmake".to_string(),
+                "-S".to_string(),
+                source_dir.to_string(),
+                "-B".to_string(),
+                build_dir.to_string(),
+                "-G".to_string(),
+                "Xcode".to_string(),
+                "-DCMAKE_C_COMPILER=clang".to_string(),
+                "-DCMAKE_CXX_COMPILER=clang++".to_string(),
             ]
         }
         _ => {
