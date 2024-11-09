@@ -92,6 +92,7 @@ pub struct BuildArgs {
     ///     unix/gcc    ---> Unix, GCC compiler
     ///     make/clang  ---> Unix, Clang compiler, Make build system
     ///     make/gcc    ---> Unix, GCC compiler, Make build system
+    ///     xcode       ---> MacOS, Xcode IDE
     ///     NONE        ---> No system type. Uses last cached generate command.
     #[clap(
         required = false,

@@ -11,16 +11,16 @@ use crate::internal::settings::Settings;
 #[cfg(target_os = "windows")]
 const BUILD_DIR_NAME: &str = "Build";
 #[cfg(target_os = "linux")]
-const BUILD_DIR_NAME: &str = "build";
+const BUILD_DIR_NAME: &str = "Build";
 #[cfg(target_os = "macos")]
-const BUILD_DIR_NAME: &str = "build";
+const BUILD_DIR_NAME: &str = "Build";
 
 #[cfg(target_os = "windows")]
 const INSTALL_DIR_NAME: &str = "Install";
 #[cfg(target_os = "linux")]
-const INSTALL_DIR_NAME: &str = "install";
+const INSTALL_DIR_NAME: &str = "Install";
 #[cfg(target_os = "macos")]
-const INSTALL_DIR_NAME: &str = "install";
+const INSTALL_DIR_NAME: &str = "Install";
 
 pub fn run(args: InitArgs, _no_init: bool) {
     debug!(
